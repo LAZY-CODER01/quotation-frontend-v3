@@ -23,7 +23,8 @@
 
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569
+  /* background: rgb(71, 85, 105) */
+    background: rgb(24, 24, 24)
 }
 :root {
 --bg: 245 247 250;
@@ -35,11 +36,11 @@
 
 
 .dark {
---bg: 210 20% 5%;
---panel: 15 20 27;
+--bg: 218 19% 5%;
+--panel: 17 20 24;
 --text: 226 232 240;
 --muted: 148 163 184;
---border: 39 46 53;
+--border: 38 46 52;
 }
 
 

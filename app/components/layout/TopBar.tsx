@@ -14,7 +14,7 @@ document.documentElement.classList.toggle("dark");
 setDark(!dark);
 };
 return (
-<header className="flex w-full items-center justify-between border-b bg-[rgb(var(--panel))] px-6 py-4">
+<header className="flex w-full items-center justify-between border-b bg-[rgb(13 15 19)] px-6 py-4">
 
 <div className="flex items-center gap-4">
 <SearchInput />

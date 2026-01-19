@@ -4,11 +4,11 @@ import { Ticket, BarChart3, Users, Settings, LogOut } from "lucide-react";
 
 export default function Sidebar() {
 return (
-<aside className="w-64 shrink-0 border-r bg-[rgb(var(--panel))]">
+<aside className="w-64 shrink-0 border-r bg-[rgb(13 15 19)]">
 <div className="flex h-full flex-col p-4">
 <div className="mb-6 flex items-center gap-3">
 <div className="h-9 w-9 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold">
-D
+
 </div>
 <div>
 <p className="font-semibold">D-BEST</p>
