@@ -1,10 +1,14 @@
 import TicketCard from "./TicketCard";
+import { EmailExtraction } from "../../../types/email";
 
 interface TicketColumnProps {
   title: string;
   count: number;
   color: "blue" | "green" | "yellow" | "emerald";
   date: string;
+  tickets: EmailExtraction[];
+  // 1. Add the click handler prop definition
+  onTicketClick?: (ticket: EmailExtraction) => void;
 }
 
 const colorMap = {
@@ -19,11 +23,13 @@ export default function TicketColumn({
   count,
   color,
   date,
+  tickets,
+  onTicketClick, // 2. Destructure the prop
 }: TicketColumnProps) {
   return (
-    <div className="flex h-full w-[300px] shrink-0 flex-col rounded-xl  bg-[rgb(var(--panel))]">
+    <div className="flex h-full w-[300px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
       
-      {/* 1. Header Area (Fixed - does not scroll) */}
+      {/* Header Area */}
       <div className="p-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -40,16 +46,23 @@ export default function TicketColumn({
         </p>
       </div>
 
-   
+      {/* Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3 pt-0">
         <div className="flex flex-col gap-3">
-          {/* Add many cards to test the scroll */}
-          <TicketCard />
-          <TicketCard company="ACME Corp" amount="AED 32,500" />
-          <TicketCard company="Global Imports" amount="AED 8,500" urgent={false} />
-          <TicketCard company="Demo Item 4" />
-          <TicketCard company="Demo Item 5" />
-          <TicketCard company="Demo Item 6" />
+          {tickets.length > 0 ? (
+            tickets.map((ticket) => (
+              // 3. Wrap TicketCard in a div to handle the click event
+              <div 
+                key={ticket.id} 
+                onClick={() => onTicketClick?.(ticket)}
+                className="cursor-pointer transition-transform duration-200 active:scale-[0.98]"
+              >
+                <TicketCard data={ticket} />
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-xs text-zinc-500 py-4">No tickets</div>
+          )}
         </div>
       </div>
     </div>
