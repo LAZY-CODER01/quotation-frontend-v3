@@ -125,7 +125,7 @@ export default function TicketSidebar({ ticket, isOpen, onClose, onUpdate, onEdi
       />
 
       {/* Sidebar Panel */}
-      <div className="fixed top-0 right-0 h-full w-[450px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
+      <div className="fixed top-0 right-0 h-full w-[650px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
         
         {/* --- 1. Top Bar --- */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">

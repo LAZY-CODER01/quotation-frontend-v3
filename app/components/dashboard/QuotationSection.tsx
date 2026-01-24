@@ -15,11 +15,17 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    const amount = window.prompt("Enter the total amount for this quotation (e.g. $1,200):");
+    
+    // If user clicks "Cancel" on the prompt, abort the upload
+    if (amount === null) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return; 
+    }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("gmail_id", ticket.gmail_id);
-
+    formData.append("amount", amount);
     setUploading(true);
     try {
       const response = await api.post("/ticket/upload-quotation", formData, {
@@ -47,40 +53,69 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
       {/* File List */}
       <div className="space-y-2">
         {ticket.quotation_files && ticket.quotation_files.length > 0 ? (
-          ticket.quotation_files.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center justify-between p-3 bg-[#0A0B0D] border border-white/10 rounded-lg group"
-            >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400">
-                  <FileText size={16} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm text-gray-200 truncate" title={file.name}>
-                    {file.name}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{new Date(file.uploaded_at).toLocaleDateString()}</span>
-                    {file.amount && <span>• {file.amount}</span>}
-                  </div>
-                </div>
-              </div>
-              <a
-                href={file.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <ExternalLink size={14} />
-              </a>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-4 text-gray-500 text-xs italic">
-            No quotation files yet.
+  ticket.quotation_files.map((file) => {
+    const uploadedAt = new Date(file.uploaded_at);
+  
+    return (
+      <div
+        key={file.id}
+        className="flex items-center justify-between p-3 bg-[#0A0B0D] border border-white/10 rounded-lg"
+      >
+        {/* Left: File info */}
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400">
+            <FileText size={16} />
           </div>
-        )}
+
+          <div className="min-w-0">
+            <p
+              className="text-sm text-gray-200 truncate"
+              title={file.name}
+            >
+              {file.name}
+            </p>
+
+            {/* Date + Time */}
+          <p className="text-xs text-gray-500">
+                      {new Date(file.uploaded_at + (file.uploaded_at.endsWith("Z") ? "" : "Z"))
+                        .toLocaleString("en-GB", { 
+                          timeZone: "Asia/Dubai",
+                          day: "numeric",
+                          month: "short", 
+                          hour: "2-digit", 
+                          minute: "2-digit",
+                          hour12: true 
+                        })} (Dubai)
+                    </p>
+          </div>
+        </div>
+
+        {/* Right: Price + Link */}
+        <div className="flex items-center gap-3">
+          {file.amount && (
+            <span className="px-2 py-1 text-xs font-semibold rounded-md bg-green-500/10 text-green-400 border border-green-500/20">
+              {file.amount}
+            </span>
+          )}
+
+          <a
+            href={file.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+          >
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      </div>
+    );
+  })
+) : (
+  <div className="text-center py-4 text-gray-500 text-xs italic">
+    No quotation files yet.
+  </div>
+)}
+
       </div>
 
       {/* Upload Button */}
