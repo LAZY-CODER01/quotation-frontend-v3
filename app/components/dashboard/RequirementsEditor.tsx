@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Plus, Download, Save, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Download, Save, Trash2, Loader2, X } from "lucide-react";
+
 import { EmailExtraction, ExtractionRequirement } from "../../../types/email";
 import api from "../../../lib/api";
 
@@ -51,6 +52,7 @@ export default function RequirementsEditor({ ticket, onBack, onSave }: Requireme
     <div className="fixed inset-0 bg-[#0F1115] z-50 flex flex-col animate-in fade-in duration-200">
       <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-[#0F1115]">
         <div className="flex items-center gap-4">
+          
             <h1 className="text-lg font-bold text-white flex items-center gap-3">
               Requirements Editor
               <span className="font-mono text-xs font-normal text-gray-400 bg-white/5 px-2 py-1 rounded border border-white/10">{ticket.ticket_number}</span>
@@ -65,6 +67,14 @@ export default function RequirementsEditor({ ticket, onBack, onSave }: Requireme
             >
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save & Back
             </button>
+              <button
+    onClick={onBack}
+    disabled={saving}
+    className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50"
+    title="Close"
+  >
+    <X size={18} />
+  </button>
         </div>
       </div>
 

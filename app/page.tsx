@@ -3,29 +3,51 @@
 import { useState } from "react";
 import TicketsBoard from "./components/tickets/TicketBoard";
 import TicketSidebar from "./components/tickets/TicketSidebar";
-import RequirementsEditor from "./components/dashboard/RequirementsEditor"; // Import new component
-import { EmailExtraction, ExtractionRequirement, QuotationFile } from "../types/email";
+import RequirementsEditor from "./components/dashboard/RequirementsEditor"; 
+import { EmailExtraction, ExtractionRequirement, QuotationFile,ActivityLog } from "../types/email";
 
 export default function DashboardPage() {
   const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
 
   // 1. State for View Mode
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const handleActivityLogAdded = (newLog: ActivityLog) => {
+    if (!selectedTicket) return;
+    
+    setSelectedTicket(prev => {
+      if (!prev) return null;
+    
+      const updatedLogs = [...(prev.activity_logs || []), newLog];
+      
+      return {
+        ...prev,
+        activity_logs: updatedLogs
+      };
+    });
+  };
+const handleStatusChanged = (newStatus: string) => {
+    if (!selectedTicket) return;
 
-  // 2. Handler to Open Editor
+    // 1. Update the selected ticket in view
+    const updatedTicket = { ...selectedTicket, ticket_status: newStatus };
+    setSelectedTicket(updatedTicket);
+  };
   const handleOpenEditor = () => {
     setIsEditorOpen(true);
-    // We keep selectedTicket set so we know WHAT to edit
   };
-
-  // 3. Handler to Close Editor (refresh board data if needed)
+const handleNoteAdded = (newNote: any) => {
+    if (!selectedTicket) return;
+    setSelectedTicket(prev => prev ? ({
+      ...prev,
+      internal_notes: [...(prev.internal_notes || []), newNote]
+    }) : null);
+  };
+  // 3. Handler to Close Editor
   const handleCloseEditor = () => {
     setIsEditorOpen(false);
-    // Ideally trigger a re-fetch in board here if data changed, 
-    // but for now simplistic toggle is fine.
   };
 
-  // 4. Handler for File Added
+  // 4. Handler for Quotation File Added
   const handleFileAdded = (newFile: QuotationFile) => {
     if (!selectedTicket) return;
     setSelectedTicket(prev => prev ? ({
@@ -34,7 +56,17 @@ export default function DashboardPage() {
     }) : null);
   };
 
-  // 5. Handler for Requirements Saved
+  // 5. Handler for CPO File Added (✅ NEW HANDLER)
+  const handleCPOAdded = (newFile: QuotationFile) => {
+    if (!selectedTicket) return;
+    setSelectedTicket(prev => prev ? ({
+      ...prev,
+      // Safely spread existing cpo_files or default to empty array
+      cpo_files: [...(prev.cpo_files || []), newFile]
+    }) : null);
+  };
+
+  // 6. Handler for Requirements Saved
   const handleRequirementsSaved = (newReqs: ExtractionRequirement[]) => {
     if (!selectedTicket) return;
     setSelectedTicket(prev => prev ? ({
@@ -49,16 +81,13 @@ export default function DashboardPage() {
   return (
     <div className="relative h-full w-full bg-[#0F1115]">
 
-      {/* 4. Conditional Rendering */}
       {isEditorOpen && selectedTicket ? (
-        // Full Screen Editor
         <RequirementsEditor
           ticket={selectedTicket}
           onBack={handleCloseEditor}
           onSave={handleRequirementsSaved}
         />
       ) : (
-        // Standard Dashboard View
         <>
           <div className="h-full w-full overflow-x-auto overflow-y-hidden p-6">
             <div className="h-full min-w-max">
@@ -70,8 +99,12 @@ export default function DashboardPage() {
             ticket={selectedTicket}
             isOpen={!!selectedTicket}
             onClose={() => setSelectedTicket(null)}
-            onEditRequirements={handleOpenEditor} // Pass the handler
-            onFileAdded={handleFileAdded}
+            onEditRequirements={handleOpenEditor}
+            onFileAdded={handleFileAdded} 
+            onCPOAdded={handleCPOAdded} 
+            onNoteAdded={handleNoteAdded}
+            onStatusChanged={handleStatusChanged}
+            onActivityLogAdded={handleActivityLogAdded}
           />
         </>
       )}

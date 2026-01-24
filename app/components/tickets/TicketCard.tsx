@@ -23,26 +23,7 @@ export default function TicketCard({ data }: TicketCardProps) {
   const itemsCount = data.extraction_result?.Requirements?.length || 0;
   const isUrgent = data.ticket_priority === 'URGENT';
 
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const response = await api.get(`/quotation/generate/${data.gmail_id}`, {
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Quotation_${data.ticket_number || data.id}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error("Download failed", error);
-      alert("Failed to download quotation.");
-    }
-  };
-
+  
   // Status Color Logic
   const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -114,20 +95,7 @@ export default function TicketCard({ data }: TicketCardProps) {
         </div>
 
         {/* Action: Generate Icon */}
-        {data.extraction_status === "VALID" ? (
-          <button
-            onClick={handleDownload}
-            className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"
-            title="Download Excel"
-          >
-            <ExternalLink size={12} />
-            <span>Excel</span>
-          </button>
-        ) : (
-             <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">
-                Irrelevant
-            </span>
-        )}
+        
       </div>
     </div>
   );

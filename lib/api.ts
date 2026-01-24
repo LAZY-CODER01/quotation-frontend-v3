@@ -5,18 +5,34 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 const api: AxiosInstance = axios.create({
     baseURL: API_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
+    // REMOVED: Do not set Content-Type globally here if you upload files
+    // headers: {
+    //    "Content-Type": "application/json",
+    // },
 });
 
-// Request Interceptor: Attach Token
+// Request Interceptor: Attach Token & Handle Headers
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = Cookies.get("token");
+        
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // ✅ THE FIX: Switch Content-Type based on data type
+        if (config.data instanceof FormData) {
+            // Let the browser set Content-Type (multipart/form-data + boundary)
+            if (config.headers) {
+                delete config.headers["Content-Type"];
+            }
+        } else {
+            // Default to JSON for all other requests
+            if (config.headers && !config.headers["Content-Type"]) {
+                config.headers["Content-Type"] = "application/json";
+            }
+        }
+
         return config;
     },
     (error: AxiosError) => {
@@ -29,13 +45,9 @@ api.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
         if (error.response && error.response.status === 401) {
-            // Clear token and redirect to login if 401 occurs
-            // We avoid using window.location here if possible to keep it SSR safe, 
-            // but client-side it's fine.
             if (typeof window !== "undefined") {
                 Cookies.remove("token");
                 Cookies.remove("user");
-                // Only redirect if not already on login page to avoid loops
                 if (!window.location.pathname.startsWith("/login")) {
                     window.location.href = "/login";
                 }
