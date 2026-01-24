@@ -5,6 +5,14 @@ export interface ExtractionRequirement {
   "Unit price": string;
 }
 
+export interface QuotationFile {
+  id: string;
+  name: string;
+  url: string;
+  amount: string;
+  uploaded_at: string;
+}
+
 export interface ExtractionResult {
   Requirements: ExtractionRequirement[];
   email: string;
@@ -16,18 +24,19 @@ export interface ExtractionResult {
 export interface EmailExtraction {
   id: number;
   gmail_id: string;
+  
+  ticket_number: string;
+  ticket_status: string;
+  ticket_priority: string;
+  
+  quotation_files?: QuotationFile[];
+  quotation_amount?: string;
+  
   sender: string;
   subject: string;
   received_at: string;
   body_text: string;
-  
-  // New Ticket Fields
-  ticket_number: string;   // e.g., "DBQ-2026-01-001"
-  ticket_status: string;   // e.g., "OPEN", "CLOSED"
-  ticket_priority: string; // e.g., "NORMAL", "URGENT"
-  
   extraction_status: string;
   extraction_result: ExtractionResult;
   created_at: string;
-  updated_at?: string;
 }

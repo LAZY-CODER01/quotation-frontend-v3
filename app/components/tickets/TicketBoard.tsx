@@ -112,15 +112,7 @@ export default function TicketsBoard({ onTicketClick }: TicketsBoardProps) {
         onTicketClick={onTicketClick}
       />
 
-      {/* 6. Irrelevant / Archived Column */}
-      <TicketColumn
-        title="Irrelevant / Archived"
-        count={irrelevantTickets.length}
-        color="blue"
-        date="-"
-        tickets={irrelevantTickets}
-        onTicketClick={onTicketClick}
-      />
+    
     </div>
   );
 }

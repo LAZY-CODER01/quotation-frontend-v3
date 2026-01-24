@@ -7,9 +7,10 @@ import {
   ShoppingBag, Truck
 } from "lucide-react";
 import { format } from "date-fns";
-import { EmailExtraction } from "../../../types/email";
-import api from "../../../lib/api";
+import { EmailExtraction ,QuotationFile } from "../../../types/email";
 
+import api from "../../../lib/api";
+import QuotationSection from "../dashboard/QuotationSection";
 interface TicketSidebarProps {
   ticket: EmailExtraction | null;
   isOpen: boolean;
@@ -17,9 +18,10 @@ interface TicketSidebarProps {
   onUpdate?: () => void;
     // 1. Add this prop
   onEditRequirements?: () => void; 
+  onFileAdded?: (newFile: QuotationFile) => void;
 }
 
-export default function TicketSidebar({ ticket, isOpen, onClose, onUpdate, onEditRequirements 
+export default function TicketSidebar({ ticket, isOpen, onClose, onUpdate, onEditRequirements ,onFileAdded
 }: TicketSidebarProps) {
   // --- Local State ---
   const [sections, setSections] = useState({
@@ -308,6 +310,14 @@ export default function TicketSidebar({ ticket, isOpen, onClose, onUpdate, onEdi
                     </div>
                     {sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </button>
+                 {sections.files && (
+    <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+      <QuotationSection 
+                ticket={ticket} 
+                onFileAdded={onFileAdded} // Pass it down
+            />
+    </div>
+  )}
              </div>
 
              {/* Section: CPO */}
