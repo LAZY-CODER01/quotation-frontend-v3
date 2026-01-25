@@ -51,11 +51,7 @@ export default function TicketCard({ data }: TicketCardProps) {
            </span>
            
            {/* Urgent Badge */}
-           {isUrgent && (
-             <span className="flex items-center gap-1 text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20 animate-pulse">
-               <AlertTriangle size={10} /> URGENT
-             </span>
-           )}
+           
         </div>
 
         <span className="text-xs font-medium text-[rgb(var(--muted))] whitespace-nowrap">
@@ -65,9 +61,15 @@ export default function TicketCard({ data }: TicketCardProps) {
 
       {/* --- Row 2: Sender Info --- */}
       <div>
+           {isUrgent && (
+             <span className="flex items-center gap-1 text-[10px] w-[70px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20 animate-pulse">
+               <AlertTriangle size={10} /> URGENT
+             </span>
+           )}
         <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate" title={data.sender}>
           {senderName}
         </h4>
+     
         <p className="text-xs text-[rgb(var(--muted))] truncate mt-0.5">
           {data.subject || "No Subject"}
         </p>

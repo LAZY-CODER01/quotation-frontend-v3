@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Upload, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Upload, FileText, Loader2, ExternalLink, X, Check } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 
@@ -8,34 +8,131 @@ interface QuotationSectionProps {
   onFileAdded?: (newFile: QuotationFile) => void;
 }
 
+// Sub-component for existing files (View Only / Edit Price)
+const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) => {
+  const [amount, setAmount] = useState(file.amount || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (amount === file.amount) return;
+    setIsSaving(true);
+    try {
+      await api.post("/ticket/update-file-amount", {
+        gmail_id: gmailId,
+        file_id: file.id,
+        amount: amount
+      });
+    } catch (error) {
+      console.error("Failed to update amount", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+  };
+
+  return (
+    <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
+      
+      {/* File Info */}
+      <div className="flex items-center gap-3 overflow-hidden flex-1">
+        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+          <FileText size={16} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
+            {file.name}
+          </p>
+          <p className="text-[10px] text-gray-500">
+            {new Date(file.uploaded_at).toLocaleString([], { 
+              year: 'numeric', month: 'short', day: 'numeric', 
+              hour: '2-digit', minute: '2-digit' 
+            })}
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side: Input + Link */}
+      <div className="flex items-center gap-3">
+        
+        {/* Editable Amount Input */}
+        <div className="flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded px-2 py-1.5 focus-within:border-blue-500/50 transition-colors w-24 sm:w-28">
+          <span className="text-[10px] font-bold text-green-500">AED</span>
+          <input
+            type="text"
+            value={amount}
+            readOnly 
+          
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            placeholder="0.00"
+            className="w-full bg-transparent text-xs text-white  text-right font-mono"
+          />
+          {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
+        </div>
+
+        {/* Download Link */}
+        <a
+          href={file.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+        >
+          <ExternalLink size={14} />
+        </a>
+      </div>
+    </div>
+  );
+};
+
 export default function QuotationSection({ ticket, onFileAdded }: QuotationSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Staging State
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingAmount, setPendingAmount] = useState("");
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const amount = window.prompt("Enter the total amount for this quotation (e.g. $1,200):");
-    
-    // If user clicks "Cancel" on the prompt, abort the upload
-    if (amount === null) {
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return; 
+    if (file) {
+      setPendingFile(file);
+      setPendingAmount(""); 
     }
+  };
+
+  const handleCancel = () => {
+    setPendingFile(null);
+    setPendingAmount("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleUpload = async () => {
+    if (!pendingFile) return;
+
+    if (!pendingAmount.trim()) {
+      alert("Please enter a price before uploading.");
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", pendingFile);
     formData.append("gmail_id", ticket.gmail_id);
-    formData.append("amount", amount);
+    formData.append("amount", pendingAmount);
+
     setUploading(true);
     try {
       const response = await api.post("/ticket/upload-quotation", formData, {
-        headers: { "Content-Type": undefined } as any, // Unset default JSON header to allow browser to set boundary
+        headers: { "Content-Type": undefined },
       });
 
       if (response.data.success && response.data.file) {
         if (onFileAdded) {
           onFileAdded(response.data.file);
         }
+        handleCancel();
       } else {
         alert("Upload failed: " + (response.data.message || "Unknown error"));
       }
@@ -44,101 +141,106 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
       alert("Upload error");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* File List */}
+    <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
+      
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-white">Quotation Files</h3>
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            {ticket.ticket_number || "NO-ID"}
+          </span>
+        </div>
+      </div>
+
+      {/* --- STAGING AREA --- */}
+      {pendingFile ? (
+        <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg space-y-3 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
+              <FileText size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate" title={pendingFile.name}>
+                {pendingFile.name}
+              </p>
+              <p className="text-[10px] text-blue-400">Ready to upload</p>
+            </div>
+            <button 
+              onClick={handleCancel} 
+              className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
+              <span className="text-xs font-bold text-gray-500">AED</span>
+              <input 
+                type="text" 
+                value={pendingAmount}
+                onChange={(e) => setPendingAmount(e.target.value)}
+                placeholder="Enter Price..."
+                className="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-600 font-mono"
+                autoFocus
+              />
+            </div>
+            <button 
+              onClick={handleUpload}
+              disabled={uploading || !pendingAmount}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-all shadow-lg shadow-blue-900/20"
+            >
+              {uploading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              <span>Confirm</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between p-3 bg-[#181A1F] border border-dashed border-white/10 rounded-lg">
+          <p className="text-xs text-gray-500 font-mono hidden sm:block">
+            DBQ-XX-XXXX Company.xlsx
+          </p>
+          <div className="w-full sm:w-auto">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[#22252B] hover:bg-[#2A2E35] border border-white/10 rounded-lg text-xs text-gray-300 transition-all hover:text-white hover:border-white/20"
+            >
+              <Upload size={14} />
+              <span>Select File</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- Existing Files List (Sorted by Newest First) --- */}
       <div className="space-y-2">
         {ticket.quotation_files && ticket.quotation_files.length > 0 ? (
-  ticket.quotation_files.map((file) => {
-    const uploadedAt = new Date(file.uploaded_at);
-  
-    return (
-      <div
-        key={file.id}
-        className="flex items-center justify-between p-3 bg-[#0A0B0D] border border-white/10 rounded-lg"
-      >
-        {/* Left: File info */}
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400">
-            <FileText size={16} />
-          </div>
-
-          <div className="min-w-0">
-            <p
-              className="text-sm text-gray-200 truncate"
-              title={file.name}
-            >
-              {file.name}
-            </p>
-
-            {/* Date + Time */}
-          <p className="text-xs text-gray-500">
-                      {new Date(file.uploaded_at + (file.uploaded_at.endsWith("Z") ? "" : "Z"))
-                        .toLocaleString("en-GB", { 
-                          timeZone: "Asia/Dubai",
-                          day: "numeric",
-                          month: "short", 
-                          hour: "2-digit", 
-                          minute: "2-digit",
-                          hour12: true 
-                        })} (Dubai)
-                    </p>
-          </div>
-        </div>
-
-        {/* Right: Price + Link */}
-        <div className="flex items-center gap-3">
-          {file.amount && (
-            <span className="px-2 py-1 text-xs font-semibold rounded-md bg-green-500/10 text-green-400 border border-green-500/20">
-              {file.amount}
-            </span>
-          )}
-
-          <a
-            href={file.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-          >
-            <ExternalLink size={14} />
-          </a>
-        </div>
-      </div>
-    );
-  })
-) : (
-  <div className="text-center py-4 text-gray-500 text-xs italic">
-    No quotation files yet.
-  </div>
-)}
-
+          // ✅ SORTING APPLIED HERE
+          [...ticket.quotation_files]
+            .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
+            .map((file) => (
+              <FileRow key={file.id} file={file} gmailId={ticket.gmail_id} />
+            ))
+        ) : (
+          !pendingFile && (
+            <div className="py-4 text-center text-xs text-gray-600 italic">
+              No files uploaded yet.
+            </div>
+          )
+        )}
       </div>
 
-      {/* Upload Button */}
-      <div>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="w-full flex items-center justify-center gap-2 py-2 border border-dashed border-white/20 rounded-lg text-gray-400 hover:text-white hover:border-white/40 hover:bg-white/5 transition-all text-sm"
-        >
-          {uploading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Upload size={16} />
-          )}
-          <span>{uploading ? "Uploading..." : "Upload File"}</span>
-        </button>
-      </div>
     </div>
   );
 }

@@ -11,6 +11,12 @@ export default function DashboardPage() {
 
   // 1. State for View Mode
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  // ✅ ADD THIS NEW HANDLER
+  const handlePriorityChanged = (newPriority: string) => {
+    if (!selectedTicket) return;
+    // Update the parent state immediately so it doesn't revert
+    setSelectedTicket(prev => prev ? ({ ...prev, ticket_priority: newPriority }) : null);
+  };
   const handleActivityLogAdded = (newLog: ActivityLog) => {
     if (!selectedTicket) return;
     
@@ -105,6 +111,7 @@ const handleNoteAdded = (newNote: any) => {
             onNoteAdded={handleNoteAdded}
             onStatusChanged={handleStatusChanged}
             onActivityLogAdded={handleActivityLogAdded}
+            onPriorityChanged={handlePriorityChanged}
           />
         </>
       )}
