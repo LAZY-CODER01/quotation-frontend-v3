@@ -29,17 +29,17 @@ export default function TopBar() {
 
             {/* Right: Actions & Profile */}
             <div className="flex items-center gap-4">
-                <button
+                {/* <button
                     onClick={toggleTheme}
                     className="rounded-lg p-2 hover:bg-[hsl(var(--bg))]"
                 >
                     {dark ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
+                </button> */}
 
-                <button className="relative rounded-lg p-2 hover:bg-[hsl(var(--bg))]">
+                {/* <button className="relative rounded-lg p-2 hover:bg-[hsl(var(--bg))]">
                     <Bell size={18} />
                     <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-500" />
-                </button>
+                </button> */}
 
                 {user && (
                     <div className="flex items-center gap-2">

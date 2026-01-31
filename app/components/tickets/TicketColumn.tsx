@@ -58,7 +58,7 @@ export default function TicketColumn({
   };
 
   return (
-    <div className="flex h-full w-[300px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
+    <div className="flex h-full  w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
       
       {/* Header Area */}
       <div className="p-4 pb-2">
