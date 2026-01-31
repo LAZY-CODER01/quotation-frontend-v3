@@ -27,7 +27,7 @@
     background: rgb(24, 24, 24)
 }
 :root {
---bg: 245 247 250;
+--bg: 255 255 255;
 --panel: 255 255 255;
 --text: 15 23 42;
 --muted: 100 116 139;
@@ -36,7 +36,7 @@
 
 
 .dark {
---bg: 218 19% 5%;
+--bg: 210 20% 5%;
 --panel: 17 20 24;
 --text: 226 232 240;
 --muted: 148 163 184;
@@ -46,4 +46,7 @@
 
 * {
 @apply border-[rgb(var(--border))];
+font-family: ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
 }

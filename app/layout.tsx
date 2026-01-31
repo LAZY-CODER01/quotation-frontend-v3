@@ -15,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className="bg-[hsl(var(--bg))] text-[rgb(var(--text))]">
+      <body className="bg-[hsl(var(--bg))] text-[rgb(var(--text))] " style={{
+  fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+}}>
         <AuthProvider>
           {/* 1. Screen Container: Locks the app to the viewport size */}
           <div className="flex h-screen w-screen overflow-hidden">
