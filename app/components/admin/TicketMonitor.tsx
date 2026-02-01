@@ -13,7 +13,20 @@ export default function TicketMonitor() {
     const [tickets, setTickets] = useState<EmailExtraction[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
+    
+    const getLatestQuoteInfo = (t: EmailExtraction) => {
+        if (!t.quotation_files || t.quotation_files.length === 0) return null;
+        
+        // Sort files by upload time (assuming the array order might not be guaranteed, though usually appended)
+        // If uploaded_at is available, use it. Otherwise rely on index.
+        const sorted = [...t.quotation_files].reverse(); // Latest is usually last
+        const latest = sorted[0];
 
+        return {
+            ref: latest.reference_id || `DBQ-${latest.id}`,
+            amount: latest.amount || "N/A"
+        };
+    };
     const fetchTickets = async () => {
         try {
             setLoading(true);
@@ -96,6 +109,7 @@ export default function TicketMonitor() {
                             </tr>
                         ) : tickets.map((t) => {
                             const { time, date } = formatDate(t.received_at || t.created_at);
+                            const latestQuote = getLatestQuoteInfo(t);
                             return (
                                 <tr
                                     key={t.gmail_id}
@@ -157,30 +171,19 @@ export default function TicketMonitor() {
                                     </td>
 
                                     {/* Commercial Refs */}
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {t.quotation_files?.map((f, i) => (
-                                                <span key={i} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
-                                                    <FileText size={10} />
-                                                    DBQ-{f.id || 'NEW'}
+                                    <td className="px-6 py-3 text-right">
+                                        {latestQuote ? (
+                                            <div className="flex flex-col items-end gap-0.5">
+                                                <span className="text-emerald-400 font-bold font-mono text-xs bg-emerald-500/10 px-1.5 rounded border border-emerald-500/20">
+                                                    AED {latestQuote.amount}
                                                 </span>
-                                            ))}
-                                            {t.quotation_amount && (
-                                                <span className="bg-emerald-900/20 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
-                                                    AED {t.quotation_amount}
+                                                <span className="text-[9px] text-gray-600 font-mono flex items-center gap-1">
+                                                    <FileText size={8} /> {latestQuote.ref}
                                                 </span>
-                                            )}
-                                            {/* Placeholder for POs if data available, using mock logic if no explicit PO field yet */}
-                                            {t.cpo_files?.map((f, i) => (
-                                                <span key={i} className="flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded text-[10px] font-mono">
-                                                    <ShoppingCart size={10} />
-                                                    PO-2026-{i + 1}
-                                                </span>
-                                            ))}
-                                            {!t.quotation_files?.length && !t.cpo_files?.length && (
-                                                <span className="text-gray-600 text-[10px]">—</span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-gray-700 text-xs font-mono">—</span>
+                                        )}
                                     </td>
 
                                     {/* Notes */}
