@@ -13,18 +13,29 @@ export default function TicketMonitor() {
     const [tickets, setTickets] = useState<EmailExtraction[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
-    
+
     const getLatestQuoteInfo = (t: EmailExtraction) => {
+        // Case 1: Order Confirmed -> Show CPO Amount (Blue)
+        if (t.ticket_status === 'ORDER_CONFIRMED' || t.ticket_status === 'ORDER_COMPLETED') {
+            if (!t.cpo_files || t.cpo_files.length === 0) return null;
+            const latestCPO = [...t.cpo_files].reverse()[0];
+            return {
+                ref: latestCPO.po_number || latestCPO.reference_id || `PO-${latestCPO.id}`,
+                amount: latestCPO.amount || "N/A",
+                type: 'PO'
+            };
+        }
+
+        // Case 2: Sent / Inbox / Others -> Show Quotation Amount (Green)
         if (!t.quotation_files || t.quotation_files.length === 0) return null;
-        
-        // Sort files by upload time (assuming the array order might not be guaranteed, though usually appended)
-        // If uploaded_at is available, use it. Otherwise rely on index.
+
         const sorted = [...t.quotation_files].reverse(); // Latest is usually last
         const latest = sorted[0];
 
         return {
             ref: latest.reference_id || `DBQ-${latest.id}`,
-            amount: latest.amount || "N/A"
+            amount: latest.amount || "N/A",
+            type: 'QUOTE'
         };
     };
     const fetchTickets = async () => {
@@ -172,13 +183,18 @@ export default function TicketMonitor() {
 
                                     {/* Commercial Refs */}
                                     <td className="px-6 py-3 text-right">
+
                                         {latestQuote ? (
                                             <div className="flex flex-col items-end gap-0.5">
-                                                <span className="text-emerald-400 font-bold font-mono text-xs bg-emerald-500/10 px-1.5 rounded border border-emerald-500/20">
+                                                <span className={`font-bold font-mono text-xs px-1.5 rounded border ${latestQuote.type === 'PO'
+                                                    ? 'text-blue-400 bg-blue-500/10 border-blue-500/20'
+                                                    : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                                    }`}>
                                                     AED {latestQuote.amount}
                                                 </span>
                                                 <span className="text-[9px] text-gray-600 font-mono flex items-center gap-1">
-                                                    <FileText size={8} /> {latestQuote.ref}
+                                                    {latestQuote.type === 'PO' ? <ShoppingCart size={8} /> : <FileText size={8} />}
+                                                    {latestQuote.ref}
                                                 </span>
                                             </div>
                                         ) : (

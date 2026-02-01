@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from "react";
-import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart } from "lucide-react";
+import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 
@@ -12,35 +12,44 @@ interface CPOSectionProps {
 const CPORow = ({ file }: { file: QuotationFile }) => {
   return (
     <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
-      
+
       {/* File Info */}
       <div className="flex items-center gap-3 overflow-hidden flex-1">
-        <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+        <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
           <FileCheck size={16} />
         </div>
         <div className="min-w-0">
           <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
             {file.name}
           </p>
-          <p className="text-[10px] text-gray-500">
-            {file.uploaded_at 
-              ? new Date(file.uploaded_at).toLocaleString([], { 
-                  year: 'numeric', month: 'short', day: 'numeric', 
-                  hour: '2-digit', minute: '2-digit' 
-                }) 
-              : "Date N/A"}
-          </p>
+          <div className="flex items-center gap-2 text-[10px] text-gray-500">
+            <span>
+                {file.uploaded_at
+                ? new Date(file.uploaded_at).toLocaleString([], {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                    })
+                : "Date N/A"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Right Side: PO Number + Link */}
-      <div className="flex items-center gap-3">
-        
-        {/* Read-only PO Number Badge */}
+      {/* Right Side: Badges + Link */}
+      <div className="flex items-center gap-2">
+
+        {/* PO Number Badge */}
         {file.po_number && (
-          <div className="px-2 py-1 bg-[#0A0B0D] border border-white/10 rounded text-xs font-mono text-purple-400">
+          <div className="px-2 py-1 bg-[#0A0B0D] border border-white/10 rounded text-[10px] font-mono text-gray-400" title="PO Number">
             PO: {file.po_number}
           </div>
+        )}
+
+        {/* Amount Badge (New) */}
+        {file.amount && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 font-bold">
+                <span>AED {file.amount}</span>
+            </div>
         )}
 
         {/* Download Link */}
@@ -64,11 +73,12 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPONumber, setPendingPONumber] = useState("");
+  const [pendingAmount, setPendingAmount] = useState("");
 
   // 1. Sanitize + Deduplicate files + Sort (Newest First)
   const cpoFiles: QuotationFile[] = useMemo(() => {
     if (!Array.isArray(ticket.cpo_files)) return [];
-    
+
     const map = new Map<string, QuotationFile>();
     for (const file of ticket.cpo_files) {
       if (!file) continue;
@@ -76,12 +86,11 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
       if (!key) continue;
       map.set(key, file);
     }
-    
-    // Convert to array and sort by uploaded_at desc
+
     return Array.from(map.values()).sort((a, b) => {
-        const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
-        const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
-        return dateB - dateA;
+      const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
+      const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
+      return dateB - dateA;
     });
   }, [ticket.cpo_files]);
 
@@ -90,13 +99,15 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
     const file = e.target.files?.[0];
     if (file) {
       setPendingFile(file);
-      setPendingPONumber(""); // Reset PO number for new file
+      setPendingPONumber(""); 
+      setPendingAmount("");
     }
   };
 
   const handleCancel = () => {
     setPendingFile(null);
     setPendingPONumber("");
+    setPendingAmount("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -104,8 +115,8 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
   const handleUpload = async () => {
     if (!pendingFile) return;
 
-    if (!pendingPONumber.trim()) {
-      alert("Please enter the PO Number.");
+    if (!pendingAmount.trim()) {
+      alert("Please enter the Order Amount.");
       return;
     }
 
@@ -113,6 +124,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
     formData.append("file", pendingFile);
     formData.append("gmail_id", ticket.gmail_id);
     formData.append("po_number", pendingPONumber);
+    formData.append("amount", pendingAmount);
 
     setUploading(true);
     try {
@@ -134,12 +146,12 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
 
   return (
     <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold text-white">Purchase Orders</h3>
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
             {cpoFiles.length} Files
           </span>
         </div>
@@ -147,48 +159,63 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
 
       {/* --- STAGING AREA --- */}
       {pendingFile ? (
-        <div className="p-3 bg-purple-500/5 border border-purple-500/20 rounded-lg space-y-3 animate-in fade-in zoom-in-95 duration-200">
-          
+        <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg space-y-3 animate-in fade-in zoom-in-95 duration-200">
+
           {/* File Name Header */}
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg">
+            <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
               <ShoppingCart size={18} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate" title={pendingFile.name}>
                 {pendingFile.name}
               </p>
-              <p className="text-[10px] text-purple-400">Ready to upload</p>
+              <p className="text-[10px] text-blue-400">Ready to upload</p>
             </div>
-            <button 
-              onClick={handleCancel} 
+            <button
+              onClick={handleCancel}
               className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
             >
               <X size={16} />
             </button>
           </div>
 
-          {/* PO Input & Confirm Button */}
+          {/* Inputs Row */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-purple-500/50 transition-all">
-              <span className="text-xs font-bold text-gray-500">PO#</span>
-              <input 
-                type="text" 
+             
+            {/* PO Number Input 
+            <div className="flex-[2] flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
+               <span className="text-[10px] font-bold text-gray-500">PO#</span>
+               <input
+                type="text"
                 value={pendingPONumber}
                 onChange={(e) => setPendingPONumber(e.target.value)}
-                placeholder="Enter PO Number..."
+                placeholder="Optional"
+                className="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-600 font-mono"
+               />
+            </div> */}
+
+            {/* Amount Input */}
+            <div className="flex-[3] flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
+              <span className="text-[10px] font-bold text-gray-500">AED</span>
+              <input
+                type="number"
+                value={pendingAmount}
+                onChange={(e) => setPendingAmount(e.target.value)}
+                placeholder="0.00"
                 className="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-600 font-mono"
                 autoFocus
               />
             </div>
-            
-            <button 
+
+            {/* Confirm Button */}
+            <button
               onClick={handleUpload}
-              disabled={uploading || !pendingPONumber}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-all shadow-lg shadow-purple-900/20"
+              disabled={uploading || !pendingAmount}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-all shadow-lg shadow-blue-900/20"
             >
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              <span>Confirm</span>
+              <span>Save</span>
             </button>
           </div>
         </div>
@@ -196,7 +223,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
         // --- DEFAULT UPLOAD BUTTON ---
         <div className="flex items-center justify-between p-3 bg-[#181A1F] border border-dashed border-white/10 rounded-lg">
           <p className="text-xs text-gray-500 font-mono hidden sm:block">
-            Customer PO Documents (PDF/Img)
+            Upload confirmed CPO (PDF/Img)
           </p>
           <div className="w-full sm:w-auto">
             <input
@@ -210,7 +237,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
               className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[#22252B] hover:bg-[#2A2E35] border border-white/10 rounded-lg text-xs text-gray-300 transition-all hover:text-white hover:border-white/20"
             >
               <Upload size={14} />
-              <span>Select PO</span>
+              <span>Select CPO</span>
             </button>
           </div>
         </div>
@@ -220,13 +247,13 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
       <div className="space-y-2">
         {cpoFiles.length > 0 ? (
           cpoFiles.map((file) => {
-             const key = (file as any).id || (file as any)._id || file.url || file.name;
-             return <CPORow key={key} file={file} />;
+            const key = (file as any).id || (file as any)._id || file.url || file.name;
+            return <CPORow key={key} file={file} />;
           })
         ) : (
           !pendingFile && (
             <div className="py-4 text-center text-xs text-gray-600 italic">
-              No PO files uploaded yet.
+              No LPO files uploaded yet.
             </div>
           )
         )}

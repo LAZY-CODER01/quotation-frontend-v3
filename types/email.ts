@@ -12,6 +12,7 @@ export interface QuotationFile {
   amount: string;
   uploaded_at: string;
   reference_id?: string;
+  po_number?: string;
 }
 
 export interface ExtractionResult {

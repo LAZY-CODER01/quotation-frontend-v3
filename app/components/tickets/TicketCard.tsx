@@ -29,11 +29,11 @@ export default function TicketCard({ data }: TicketCardProps) {
         /* 1. Added Green Background Tint on Hover for the 'Whole Ticket' feel */
      
         
-        ${isUrgent 
+        ${isUrgent
           /* 2. Urgent: Default is Black Border + Red Left. 
                 HOVER is now Emerald Border + Emerald Shadow */
-          ? 'border border border-l-red-500 border-l-4 hover:border-red-500 hover:shadow-red-500/10    hover:bg-red-500/5' 
-          
+          ? 'border border border-l-red-500 border-l-4 hover:border-red-500 hover:shadow-red-500/10    hover:bg-red-500/5'
+
           /* 3. Normal: Default is Gray Border. 
                 HOVER is Emerald Border + Emerald Shadow */
           : 'border border-[rgb(var(--border))] hover:border-emerald-500 hover:shadow-emerald-500/10  hover:bg-emerald-500/5'
@@ -42,9 +42,9 @@ export default function TicketCard({ data }: TicketCardProps) {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-           <span className="font-mono text-xs font-bold text-[rgb(var(--muted))] bg-white/5 px-2 py-1 rounded border border-white/5">
+          <span className="font-mono text-xs font-bold text-[rgb(var(--muted))] bg-white/5 px-2 py-1 rounded border border-white/5">
             {data.ticket_number || `ID-${data.id}`}
-           </span>
+          </span>
         </div>
 
         <span className="text-xs font-medium text-[rgb(var(--muted))] whitespace-nowrap">
@@ -56,27 +56,63 @@ export default function TicketCard({ data }: TicketCardProps) {
         <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate" title={data.sender}>
           {senderName}
         </h4>
-     
+
         <p className="text-xs text-[rgb(var(--muted))] truncate mt-0.5">
           {data.subject || "No Subject"}
         </p>
+
+        {/* Price Display */}
+        {(() => {
+          // Logic to find relevant amount
+          let amountDisplay = null;
+          let isCPO = false;
+
+          if (data.ticket_status === 'ORDER_CONFIRMED' || data.ticket_status === 'ORDER_COMPLETED') {
+            // Prioritize CPO
+            if (data.cpo_files && data.cpo_files.length > 0) {
+              const latest = [...data.cpo_files].reverse()[0];
+              if (latest.amount) {
+                amountDisplay = latest.amount;
+                isCPO = true;
+              }
+            }
+          }
+
+          // Fallback or Status == SENT -> Check Quotation
+          if (!amountDisplay && data.quotation_files && data.quotation_files.length > 0) {
+            const latest = [...data.quotation_files].reverse()[0];
+            if (latest.amount) {
+              amountDisplay = latest.amount;
+              isCPO = false;
+            }
+          }
+
+          if (amountDisplay) {
+            return (
+              <div className={`mt-2 text-sm font-bold truncate ${isCPO ? 'text-blue-400' : 'text-emerald-400'}`}>
+                AED {amountDisplay} {isCPO && <span className="text-[10px] font-normal opacity-70">(CPO)</span>}
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       <div className="mt-1 pt-3 border-t border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-            {data.extraction_status === "VALID" && (
-                <div className="flex text-[10px] items-center gap-1 text-[rgb(var(--muted))] group-hover:text-gray-300 transition-colors">
-                    <Box size={12} strokeWidth={2} />
-                    <span className="text-xs">
-                    {itemsCount} item{itemsCount !== 1 ? "s" : ""}
-                    </span>
-                </div>
-            )}
-            {isUrgent && (
-             <span className="flex items-center gap-1 text-[10px] w-[70px] font-bold text-[hsl(0_72%_51%)] bg-[hsl(0_72%_51%/0.1)] border border-[hsl(0_72%_51%/0.3)] px-2 py-0.5 rounded-full animate-pulse">
-               <AlertTriangle size={10} /> URGENT
-             </span>
-           )}
+          {data.extraction_status === "VALID" && (
+            <div className="flex text-[10px] items-center gap-1 text-[rgb(var(--muted))] group-hover:text-gray-300 transition-colors">
+              <Box size={12} strokeWidth={2} />
+              <span className="text-xs">
+                {itemsCount} item{itemsCount !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+          {isUrgent && (
+            <span className="flex items-center gap-1 text-[10px] w-[70px] font-bold text-[hsl(0_72%_51%)] bg-[hsl(0_72%_51%/0.1)] border border-[hsl(0_72%_51%/0.3)] px-2 py-0.5 rounded-full animate-pulse">
+              <AlertTriangle size={10} /> URGENT
+            </span>
+          )}
         </div>
       </div>
     </div>
