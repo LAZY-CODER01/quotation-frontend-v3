@@ -174,6 +174,7 @@ export default function TicketSidebar({
       case 'SENT': return { label: 'Sent', color: 'bg-blue-500', icon: <Send size={14} /> };
       case 'ORDER_CONFIRMED': return { label: 'Order Confirmed', color: 'bg-yellow-500', icon: <ShoppingBag size={14} /> };
       case 'ORDER_COMPLETED': return { label: 'Order Completed', color: 'bg-emerald-500', icon: <Truck size={14} /> };
+      case 'COMPLETION_REQUESTED': return { label: 'Completion Requested', color: 'bg-orange-500', icon: <AlertTriangle size={14} /> };
       case 'CLOSED': return { label: 'Closed', color: 'bg-gray-500', icon: <XCircle size={14} /> };
       default: return { label: 'Inbox', color: 'bg-indigo-500', icon: <CheckCircle2 size={14} /> };
     }
@@ -197,17 +198,32 @@ export default function TicketSidebar({
 
   const handleStatusChange = async (newStatus: string) => {
     if (!ticket) return;
+
+    // Optimistic UI Update
+    const oldStatus = currentStatus;
     setCurrentStatus(newStatus);
     setIsStatusOpen(false);
+
     try {
-      await api.post('/ticket/update-status', { gmail_id: ticket.gmail_id, status: newStatus });
+      // Use the new RBAC endpoint
+      // Adjust endpoint if ticket_number is not available, fallback to something else or assume ticket_number exists
+      const identifier = ticket.ticket_number || `TKT-${ticket.id}`;
+      // NOTE: backend expects ticket_number. If TKT-ID format is strictly used in backend ID generation, this is fine. 
+      // Ideally, the ticket object should have the exact ticket_number from DB. 
+      // Let's assume ticket.ticket_number is populated as per my read of DuckDBService code.
+
+      await api.put(`/ticket/${ticket.ticket_number}/status`, { status: newStatus });
+
       if (onStatusChanged) onStatusChanged(newStatus);
       createLocalLog("STATUS_CHANGE", `Changed status to ${newStatus}`);
       if (onUpdate) onUpdate();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update status", error);
-      setCurrentStatus(ticket.ticket_status || "OPEN");
-      alert("Failed to update status");
+      setCurrentStatus(oldStatus); // Revert
+
+      // Show specific error from backend if available
+      const errMsg = error.response?.data?.error || "Failed to update status";
+      alert(errMsg);
     }
   };
 
@@ -306,15 +322,23 @@ export default function TicketSidebar({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 relative">
               <label className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Status</label>
+
+              {/* Status Display Button */}
               <button
                 onClick={() => isAdmin && setIsStatusOpen(!isStatusOpen)}
                 disabled={!isAdmin}
                 title={!isAdmin ? "Only Admins can manually change status." : ""}
                 className={`w-full flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 transition-colors ${isAdmin ? "hover:border-white/20" : "opacity-50 cursor-not-allowed"}`}
               >
-                <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${statusConfig.color} shadow-[0_0_8px_rgba(255,255,255,0.3)]`}></div><span className="text-white text-xs">{statusConfig.label}</span></div>{isAdmin && <ChevronDown size={14} className="text-gray-500" />}
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${statusConfig.color} shadow-[0_0_8px_rgba(255,255,255,0.3)]`}></div>
+                  <span className="text-white text-xs">{statusConfig.label}</span>
+                </div>
+                {isAdmin && <ChevronDown size={14} className="text-gray-500" />}
               </button>
-              {isStatusOpen && (
+
+              {/* Admin Dropdown */}
+              {isStatusOpen && isAdmin && (
                 <div className="absolute top-full left-0 mt-1 w-full bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
                   <div className="p-1 space-y-0.5">
                     {[{ val: 'OPEN', label: 'Inbox', col: 'bg-indigo-500' }, { val: 'SENT', label: 'Sent', col: 'bg-blue-500' }, { val: 'ORDER_CONFIRMED', label: 'Order Confirmed', col: 'bg-yellow-500' }, { val: 'ORDER_COMPLETED', label: 'Order Completed', col: 'bg-emerald-500' }, { val: 'CLOSED', label: 'Closed', col: 'bg-gray-500' }].map((opt) => (
@@ -323,6 +347,39 @@ export default function TicketSidebar({
                   </div>
                 </div>
               )}
+
+              {/* Action Buttons based on Role */}
+              <div className="mt-2 flex gap-2">
+                {isAdmin ? (
+                  <>
+                    {currentStatus !== 'ORDER_COMPLETED' && currentStatus !== 'CLOSED' && (
+                      <button
+                        onClick={() => handleStatusChange('ORDER_COMPLETED')}
+                        className="flex-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <CheckCircle2 size={12} /> Mark Completed
+                      </button>
+                    )}
+                    {currentStatus !== 'CLOSED' && (
+                      <button
+                        onClick={() => handleStatusChange('CLOSED')}
+                        className="flex-1 bg-gray-500/10 border border-gray-500/20 text-gray-400 hover:bg-gray-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <XCircle size={12} /> Close Ticket
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  currentStatus !== 'COMPLETION_REQUESTED' && currentStatus !== 'CLOSED' && currentStatus !== 'ORDER_COMPLETED' && (
+                    <button
+                      onClick={() => handleStatusChange('COMPLETION_REQUESTED')}
+                      className="w-full bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Truck size={12} /> Request Completion
+                    </button>
+                  )
+                )}
+              </div>
             </div>
 
             {/* Assigned To Section */}
