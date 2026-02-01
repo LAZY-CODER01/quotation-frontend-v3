@@ -3,18 +3,18 @@
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
-import { 
-  CheckCircle, XCircle, Mail, RotateCw, 
-  UserPlus, Hash, Lock, User, Users, Loader2 
+import {
+    CheckCircle, XCircle, Mail, RotateCw,
+    UserPlus, Hash, Lock, User, Users, Loader2
 } from "lucide-react";
 
 export default function AdminPage() {
     const { user } = useAuth();
-    
+
     // --- Gmail State ---
     const [status, setStatus] = useState<{ connected: boolean; monitoring: boolean; company_gmail_id: string } | null>(null);
     const [loading, setLoading] = useState(true);
-    
+
     // --- User Creation State ---
     const [userForm, setUserForm] = useState({
         username: "",
@@ -23,7 +23,7 @@ export default function AdminPage() {
         role: "user"
     });
     const [creatingUser, setCreatingUser] = useState(false);
-    
+
     // --- General State ---
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
@@ -73,28 +73,7 @@ export default function AdminPage() {
     };
 
     // ... (Existing Callback Logic) ...
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        const errorParam = params.get("error");
-        if (code) connectGmail(code);
-        else if (errorParam) setError(`OAuth Error: ${errorParam}`);
-    }, []);
-
-    const connectGmail = async (code: string) => {
-        try {
-            setLoading(true);
-            await api.get(`/admin/gmail/callback?code=${code}`);
-            window.history.replaceState({}, document.title, "/admin");
-            fetchStatus();
-            alert("Gmail connected successfully!");
-        } catch (err) {
-            console.error(err);
-            setError("Failed to complete Gmail connection");
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Callback logic is now handled in /admin/gmail/callback/page.tsx
 
     // --- New User Logic ---
 
@@ -102,7 +81,7 @@ export default function AdminPage() {
         e.preventDefault();
         setError("");
         setSuccessMsg("");
-        
+
         if (!userForm.username || !userForm.password || !userForm.employee_code) {
             setError("All fields are required");
             return;
@@ -217,18 +196,18 @@ export default function AdminPage() {
                     </div>
 
                     <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        
+
                         {/* Username */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
                                 <User size={12} /> Username
                             </label>
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="john_doe"
                                 className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
                                 value={userForm.username}
-                                onChange={e => setUserForm({...userForm, username: e.target.value})}
+                                onChange={e => setUserForm({ ...userForm, username: e.target.value })}
                             />
                         </div>
 
@@ -237,12 +216,12 @@ export default function AdminPage() {
                             <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
                                 <Hash size={12} /> Employee Code
                             </label>
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="EMP-001"
                                 className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
                                 value={userForm.employee_code}
-                                onChange={e => setUserForm({...userForm, employee_code: e.target.value})}
+                                onChange={e => setUserForm({ ...userForm, employee_code: e.target.value })}
                             />
                         </div>
 
@@ -251,12 +230,12 @@ export default function AdminPage() {
                             <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
                                 <Lock size={12} /> Password
                             </label>
-                            <input 
+                            <input
                                 type="password"
                                 placeholder="••••••••"
                                 className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
                                 value={userForm.password}
-                                onChange={e => setUserForm({...userForm, password: e.target.value})}
+                                onChange={e => setUserForm({ ...userForm, password: e.target.value })}
                             />
                         </div>
 
@@ -265,10 +244,10 @@ export default function AdminPage() {
                             <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
                                 <CheckCircle size={12} /> Role
                             </label>
-                            <select 
+                            <select
                                 className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50 appearance-none"
                                 value={userForm.role}
-                                onChange={e => setUserForm({...userForm, role: e.target.value})}
+                                onChange={e => setUserForm({ ...userForm, role: e.target.value })}
                             >
                                 <option value="user">User (Employee)</option>
                                 <option value="ADMIN">Admin</option>

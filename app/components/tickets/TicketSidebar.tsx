@@ -35,9 +35,9 @@ interface TicketSidebarProps {
   onAssignmentChanged?: (newAssignee: string) => void;
 }
 
-export default function TicketSidebar({ 
-  ticket, isOpen, onClose, onUpdate, 
-  onEditRequirements, onFileAdded, onCPOAdded, onNoteAdded, 
+export default function TicketSidebar({
+  ticket, isOpen, onClose, onUpdate,
+  onEditRequirements, onFileAdded, onCPOAdded, onNoteAdded,
   onStatusChanged, onActivityLogAdded, onPriorityChanged, onAssignmentChanged
 }: TicketSidebarProps) {
 
@@ -58,7 +58,7 @@ export default function TicketSidebar({
   const [currentStatus, setCurrentStatus] = useState("");
   const [noteText, setNoteText] = useState("");
   const [isSendingNote, setIsSendingNote] = useState(false);
-  
+
   const internalNotes = (ticket?.internal_notes as InternalNote[]) || [];
 
   // --- Sync State with Ticket ---
@@ -67,24 +67,24 @@ export default function TicketSidebar({
       setCurrentPriority(ticket.ticket_priority || "NORMAL");
       setCurrentStatus(ticket.ticket_status || "OPEN");
       // ✅ This ensures the state matches the DB value on load
-      setCurrentAssignee(ticket.assigned_to || ""); 
+      setCurrentAssignee(ticket.assigned_to || "");
     }
   }, [ticket]);
 
   // --- Helpers ---
-  const sortedLogs = ticket?.activity_logs 
+  const sortedLogs = ticket?.activity_logs
     ? [...ticket.activity_logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     : [];
 
   const getLogIcon = (action: string) => {
     switch (action) {
-        case 'STATUS_CHANGE': return <RotateCw size={14} className="text-blue-400" />;
-        case 'PRIORITY_CHANGE': return <AlertTriangle size={14} className="text-orange-400" />;
-        case 'QUOTATION_UPLOAD': return <FileCheck size={14} className="text-green-400" />;
-        case 'CPO_UPLOAD': return <ShoppingCart size={14} className="text-purple-400" />;
-        case 'NOTE_ADDED': return <MessageSquare size={14} className="text-yellow-400" />;
-        case 'ASSIGNMENT_CHANGE': return <User size={14} className="text-pink-400" />;
-        default: return <History size={14} className="text-gray-500" />;
+      case 'STATUS_CHANGE': return <RotateCw size={14} className="text-blue-400" />;
+      case 'PRIORITY_CHANGE': return <AlertTriangle size={14} className="text-orange-400" />;
+      case 'QUOTATION_UPLOAD': return <FileCheck size={14} className="text-green-400" />;
+      case 'CPO_UPLOAD': return <ShoppingCart size={14} className="text-purple-400" />;
+      case 'NOTE_ADDED': return <MessageSquare size={14} className="text-yellow-400" />;
+      case 'ASSIGNMENT_CHANGE': return <User size={14} className="text-pink-400" />;
+      default: return <History size={14} className="text-gray-500" />;
     }
   };
 
@@ -135,7 +135,7 @@ export default function TicketSidebar({
         text: noteText
       });
       if (response.data.success) {
-        setNoteText(""); 
+        setNoteText("");
         if (onNoteAdded) onNoteAdded(response.data.note);
         createLocalLog("NOTE_ADDED", "Added an internal note");
       } else {
@@ -221,19 +221,56 @@ export default function TicketSidebar({
   const isUrgent = currentPriority === "URGENT";
   const statusConfig = getStatusConfig(currentStatus);
 
+  // Get latest reference IDs
+  const latestQuotation = ticket.quotation_files && ticket.quotation_files.length > 0
+    ? ticket.quotation_files[ticket.quotation_files.length - 1]
+    : null;
+  const latestCPO = ticket.cpo_files && ticket.cpo_files.length > 0
+    ? ticket.cpo_files[ticket.cpo_files.length - 1]
+    : null;
+
+  const dbqId = latestQuotation?.reference_id;
+  const poId = latestCPO?.reference_id;
+
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
       <div className="fixed top-0 right-0 h-full w-[650px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
-        
+
         {/* Top Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+
+            {/* Ticket ID */}
             <span className="font-mono text-xs font-bold text-gray-400 bg-white/5 px-2 py-1 rounded border border-white/10">
               {ticket.ticket_number || `TKT-${ticket.id}`}
             </span>
-            <div className="relative">
-              <button onClick={() => setIsPriorityOpen(!isPriorityOpen)} className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all ${isUrgent ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}>
+
+            {/* DBQ ID */}
+            {dbqId && (
+              <>
+                <div className="w-4 h-[1px] bg-gray-700" />
+                <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                  {dbqId}
+                </span>
+              </>
+            )}
+
+            {/* PO ID */}
+            {poId && (
+              <>
+                <div className="w-4 h-[1px] bg-gray-700" />
+                <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
+                  {poId}
+                </span>
+              </>
+            )}
+
+            <div className="pl-3 border-l border-white/10 ml-1 relative">
+              <button
+                onClick={() => setIsPriorityOpen(!isPriorityOpen)}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all ${isUrgent ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
+              >
                 {isUrgent && <AlertTriangle size={10} />}
                 <span>{currentPriority === "URGENT" ? "Urgent" : "Normal"}</span>
                 <ChevronDown size={12} className="opacity-50" />
@@ -249,7 +286,7 @@ export default function TicketSidebar({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"><ChevronsRight size={14} /> <span>Collapse</span></button>
+            {/* <button onClick={onClose} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"><ChevronsRight size={14} /> <span>Collapse</span></button> */}
             <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
           </div>
         </div>
@@ -269,8 +306,13 @@ export default function TicketSidebar({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 relative">
               <label className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Status</label>
-              <button onClick={() => setIsStatusOpen(!isStatusOpen)} className="w-full flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 hover:border-white/20 transition-colors">
-                <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${statusConfig.color} shadow-[0_0_8px_rgba(255,255,255,0.3)]`}></div><span className="text-white text-xs">{statusConfig.label}</span></div><ChevronDown size={14} className="text-gray-500" />
+              <button
+                onClick={() => isAdmin && setIsStatusOpen(!isStatusOpen)}
+                disabled={!isAdmin}
+                title={!isAdmin ? "Only Admins can manually change status." : ""}
+                className={`w-full flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 transition-colors ${isAdmin ? "hover:border-white/20" : "opacity-50 cursor-not-allowed"}`}
+              >
+                <div className="flex items-center gap-2"><div className={`w-2 h-2 rounded-full ${statusConfig.color} shadow-[0_0_8px_rgba(255,255,255,0.3)]`}></div><span className="text-white text-xs">{statusConfig.label}</span></div>{isAdmin && <ChevronDown size={14} className="text-gray-500" />}
               </button>
               {isStatusOpen && (
                 <div className="absolute top-full left-0 mt-1 w-full bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
@@ -296,64 +338,64 @@ export default function TicketSidebar({
                 </div>
               ) : (
                 <div className="flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 opacity-80">
-                   <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold">{currentAssignee ? currentAssignee.charAt(0).toUpperCase() : "?"}</div>
-                      <span className={`text-xs ${currentAssignee ? "text-gray-200" : "text-gray-500 italic"}`}>{currentAssignee || "Unassigned"}</span>
-                   </div>
-                   <span className="text-gray-600 text-[10px]">Read-only</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold">{currentAssignee ? currentAssignee.charAt(0).toUpperCase() : "?"}</div>
+                    <span className={`text-xs ${currentAssignee ? "text-gray-200" : "text-gray-500 italic"}`}>{currentAssignee || "Unassigned"}</span>
+                  </div>
+                  <span className="text-gray-600 text-[10px]">Read-only</span>
                 </div>
               )}
             </div>
           </div>
 
           <div className="bg-[#181A1F] border border-white/10 rounded-xl p-4 space-y-3">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><FileText size={18} className="text-gray-400" /><span className="font-medium text-white">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
-                <div className="flex gap-2">
-                    {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"><Download size={12} /> Excel</button>) : <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Irrelevant</span>}
-                   <button onClick={onEditRequirements} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"><Maximize2 size={14} /> View</button>
-                </div>
-             </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2"><FileText size={18} className="text-gray-400" /><span className="font-medium text-white">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
+              <div className="flex gap-2">
+                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"><Download size={12} /> Excel</button>) : <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Irrelevant</span>}
+                <button onClick={onEditRequirements} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"><Maximize2 size={14} /> View</button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2 border-t border-white/10 pt-4">
-             <div className="border-b border-white/5 pb-2">
-                <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20}  className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-                 {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={onFileAdded} /></div>}
-             </div>
+            <div className="border-b border-white/5 pb-2">
+              <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={onFileAdded} /></div>}
+            </div>
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
               {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={onCPOAdded} /></div>}
             </div>
-             <div>
-                <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20}  className="text-emerald-500"/><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-                {sections.notes && (
-                    <div className="mt-2 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                        <div className="space-y-2"><textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="w-full h-20 bg-[#0A0B0D] border border-white/10 rounded-lg p-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Add an internal note..." ></textarea><button onClick={handleAddNote} disabled={isSendingNote || !noteText.trim()} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/20">{isSendingNote ? <Loader2 size={16} className="animate-spin " /> : <Send size={16} className="text-emerald-500" />} Add Note</button></div>
-                        <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                          {internalNotes.length > 0 ? ( internalNotes.map((note) => ( <div key={note.id} className="bg-[#0A0B0D] border border-white/5 rounded-lg p-3 space-y-1"><div className="flex items-center justify-between text-xs text-gray-500"><span className="font-semibold text-emerald-500">{note.author}</span><span>{new Date(note.created_at).toLocaleString()}</span></div><p className="text-sm text-gray-300 whitespace-pre-wrap">{note.text}</p></div>)) ) : <div className="text-center text-xs text-gray-600 italic py-2">No notes yet.</div>}
-                        </div>
-                    </div>
-                )}
-             </div>
-             <div className="border-t border-white/5 pt-2">
-                <button onClick={() => toggleSection('activity')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><History size={18} /><span>Activity Logs ({sortedLogs.length})</span></div>{sections.activity ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-                {sections.activity && (
-                  <div className="mt-2 space-y-0 pl-2 max-h-80 overflow-y-auto custom-scrollbar animate-in slide-in-from-top-2 duration-200">
-                    {sortedLogs.length > 0 ? (
-                      sortedLogs.map((log) => (
-                        <div key={log.id} className="relative pl-6 pb-6 border-l border-white/10 last:border-0 last:pb-0 group">
-                          <div className="absolute -left-[9px] top-0 w-5 h-5 rounded-full bg-[#181A1F] border border-white/10 flex items-center justify-center">{getLogIcon(log.action)}</div>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between"><span className="text-xs font-semibold text-gray-200">{log.user}</span><span className="text-[10px] text-gray-500">{format(new Date(log.timestamp), 'MMM d, h:mm a')}</span></div>
-                            <p className="text-xs text-gray-400">{log.description}</p>
-                          </div>
-                        </div>
-                      ))
-                    ) : <div className="text-center text-xs text-gray-600 italic py-2">No activity recorded yet.</div>}
+            <div>
+              <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              {sections.notes && (
+                <div className="mt-2 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  <div className="space-y-2"><textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="w-full h-20 bg-[#0A0B0D] border border-white/10 rounded-lg p-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Add an internal note..." ></textarea><button onClick={handleAddNote} disabled={isSendingNote || !noteText.trim()} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/20">{isSendingNote ? <Loader2 size={16} className="animate-spin " /> : <Send size={16} className="text-emerald-500" />} Add Note</button></div>
+                  <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                    {internalNotes.length > 0 ? (internalNotes.map((note) => (<div key={note.id} className="bg-[#0A0B0D] border border-white/5 rounded-lg p-3 space-y-1"><div className="flex items-center justify-between text-xs text-gray-500"><span className="font-semibold text-emerald-500">{note.author}</span><span>{new Date(note.created_at).toLocaleString()}</span></div><p className="text-sm text-gray-300 whitespace-pre-wrap">{note.text}</p></div>))) : <div className="text-center text-xs text-gray-600 italic py-2">No notes yet.</div>}
                   </div>
-                )}
-             </div>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-white/5 pt-2">
+              <button onClick={() => toggleSection('activity')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><History size={18} /><span>Activity Logs ({sortedLogs.length})</span></div>{sections.activity ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              {sections.activity && (
+                <div className="mt-2 space-y-0 pl-2 max-h-80 overflow-y-auto custom-scrollbar animate-in slide-in-from-top-2 duration-200">
+                  {sortedLogs.length > 0 ? (
+                    sortedLogs.map((log) => (
+                      <div key={log.id} className="relative pl-6 pb-6 border-l border-white/10 last:border-0 last:pb-0 group">
+                        <div className="absolute -left-[9px] top-0 w-5 h-5 rounded-full bg-[#181A1F] border border-white/10 flex items-center justify-center">{getLogIcon(log.action)}</div>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-gray-200">{log.user}</span><span className="text-[10px] text-gray-500">{format(new Date(log.timestamp), 'MMM d, h:mm a')}</span></div>
+                          <p className="text-xs text-gray-400">{log.description}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : <div className="text-center text-xs text-gray-600 italic py-2">No activity recorded yet.</div>}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ export interface QuotationFile {
   url: string;
   amount: string;
   uploaded_at: string;
+  reference_id?: string;
 }
 
 export interface ExtractionResult {
