@@ -1,8 +1,11 @@
 "use client";
 
 import SidebarItem from "./SidebarItem";
-import { Ticket, LogOut, ClipboardCheck, Mail, Users as UsersIcon, ShieldCheck } from "lucide-react";
-import { useAuth } from "../../../context/AuthContext";
+import { 
+    Ticket, LogOut, ClipboardCheck, Mail, 
+    Users as UsersIcon, Monitor 
+} from "lucide-react";
+import { useAuth } from "../../../context/AuthContext"; // Adjust path as needed
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Sidebar() {
@@ -59,6 +62,13 @@ export default function Sidebar() {
                             <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                                 Admin Controls
                             </div>
+
+                            <SidebarItem
+                                icon={<Monitor size={18} />}
+                                label="Ticket Monitor"
+                                onClick={() => router.push('/admin?view=monitor')}
+                                active={isActive('/admin', 'monitor')}
+                            />
                             
                             <SidebarItem
                                 icon={<ClipboardCheck size={18} />}
