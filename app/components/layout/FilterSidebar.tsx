@@ -26,7 +26,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
       const exists = prev.statuses.includes(status);
       return {
         ...prev,
-        statuses: exists 
+        statuses: exists
           ? prev.statuses.filter(s => s !== status)
           : [...prev.statuses, status]
       };
@@ -37,7 +37,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
   return (
     <div className="fixed inset-y-0 right-0 w-[400px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 flex flex-col">
-      
+
       {/* --- Header --- */}
       <div className="flex items-center justify-between p-4 border-b border-white/5">
         <div className="flex items-center gap-2 text-emerald-500">
@@ -51,7 +51,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
       {/* --- Scrollable Content --- */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-gray-800">
-        
+
         {/* 1. Status Column */}
         <div>
           <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">
@@ -100,9 +100,9 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
         {/* 3. Date Range */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase">
-             <Calendar size={14} /> Date Range
+            <Calendar size={14} /> Date Range
           </div>
-          <select 
+          <select
             value={localFilters.dateType}
             onChange={(e) => handleChange('dateType', e.target.value)}
             className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
@@ -111,17 +111,17 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
             <option value="updated">Updated Date</option>
           </select>
           <div className="grid grid-cols-2 gap-3">
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={localFilters.startDate}
               onChange={(e) => handleChange('startDate', e.target.value)}
-              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none" 
+              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
             />
-            <input 
-              type="date" 
+            <input
+              type="date"
               value={localFilters.endDate}
               onChange={(e) => handleChange('endDate', e.target.value)}
-              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none" 
+              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
             />
           </div>
         </div>
@@ -163,91 +163,91 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
         {/* 5. Inputs (Email, Ticket #, Quotation) */}
         <div className="space-y-4">
-            <InputGroup 
-                label="Client Email" 
-                icon={<Mail size={14}/>} 
-                placeholder="Search email..." 
-                value={localFilters.clientEmail}
-                onChange={(v) => handleChange('clientEmail', v)}
-            />
-            <InputGroup 
-                label="Ticket Number" 
-                icon={<Hash size={14}/>} 
-                placeholder="TKT-XXX" 
-                value={localFilters.ticketNumber}
-                onChange={(v) => handleChange('ticketNumber', v)}
-            />
-            <InputGroup 
-                label="Quotation Reference" 
-                icon={<Hash size={14}/>} 
-                placeholder="DBQ-XX-XXXX" 
-                value={localFilters.quotationReference}
-                onChange={(v) => handleChange('quotationReference', v)}
-            />
+          <InputGroup
+            label="Client Email"
+            icon={<Mail size={14} />}
+            placeholder="Search email..."
+            value={localFilters.clientEmail}
+            onChange={(v: string) => handleChange('clientEmail', v)}
+          />
+          <InputGroup
+            label="Ticket Number"
+            icon={<Hash size={14} />}
+            placeholder="TKT-XXX"
+            value={localFilters.ticketNumber}
+            onChange={(v: string) => handleChange('ticketNumber', v)}
+          />
+          <InputGroup
+            label="Quotation Reference"
+            icon={<Hash size={14} />}
+            placeholder="DBQ-XX-XXXX"
+            value={localFilters.quotationReference}
+            onChange={(v: string) => handleChange('quotationReference', v)}
+          />
         </div>
 
         {/* 6. Quotation Status & Amount */}
         <div className="space-y-3">
-             <label className="text-xs text-gray-400 uppercase">Quotation Status</label>
-             <div className="flex rounded-lg border border-white/10 overflow-hidden">
-                {['ALL', 'HAS_QUOTATION', 'NO_QUOTATION'].map(s => (
-                    <button 
-                        key={s}
-                        onClick={() => handleChange('quotationStatus', s)}
-                        className={`flex-1 py-2 text-[10px] font-medium transition-colors 
+          <label className="text-xs text-gray-400 uppercase">Quotation Status</label>
+          <div className="flex rounded-lg border border-white/10 overflow-hidden">
+            {['ALL', 'HAS_QUOTATION', 'NO_QUOTATION'].map(s => (
+              <button
+                key={s}
+                onClick={() => handleChange('quotationStatus', s)}
+                className={`flex-1 py-2 text-[10px] font-medium transition-colors 
                         ${localFilters.quotationStatus === s ? 'bg-emerald-500 text-white' : 'hover:bg-white/5 text-gray-400'}`}
-                    >
-                        {s === 'ALL' ? 'All' : s === 'HAS_QUOTATION' ? 'Has Quotation' : 'No Quotation'}
-                    </button>
-                ))}
-             </div>
-             
-             <div className="flex gap-3">
-                <InputGroup placeholder="Min Amount" icon={<DollarSign size={12}/>} value={localFilters.quotationMinAmount} onChange={(v)=>handleChange('quotationMinAmount', v)} />
-                <InputGroup placeholder="Max Amount" icon={<DollarSign size={12}/>} value={localFilters.quotationMaxAmount} onChange={(v)=>handleChange('quotationMaxAmount', v)} />
-             </div>
+              >
+                {s === 'ALL' ? 'All' : s === 'HAS_QUOTATION' ? 'Has Quotation' : 'No Quotation'}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3">
+            <InputGroup placeholder="Min Amount" icon={<DollarSign size={12} />} value={localFilters.quotationMinAmount} onChange={(v: string) => handleChange('quotationMinAmount', v)} />
+            <InputGroup placeholder="Max Amount" icon={<DollarSign size={12} />} value={localFilters.quotationMaxAmount} onChange={(v: string) => handleChange('quotationMaxAmount', v)} />
+          </div>
         </div>
 
         {/* 7. CPO Section */}
         <div className="space-y-3 pt-4 border-t border-white/5">
-             <h3 className="text-xs font-bold text-blue-400 flex items-center gap-2">
-                 Customer Purchase Order (CPO)
-             </h3>
-             <div className="flex rounded-lg border border-white/10 overflow-hidden">
-                {['ALL', 'HAS_CPO', 'NO_CPO'].map(s => (
-                    <button 
-                        key={s}
-                        onClick={() => handleChange('cpoStatus', s)}
-                        className={`flex-1 py-2 text-[10px] font-medium transition-colors 
+          <h3 className="text-xs font-bold text-blue-400 flex items-center gap-2">
+            Customer Purchase Order (CPO)
+          </h3>
+          <div className="flex rounded-lg border border-white/10 overflow-hidden">
+            {['ALL', 'HAS_CPO', 'NO_CPO'].map(s => (
+              <button
+                key={s}
+                onClick={() => handleChange('cpoStatus', s)}
+                className={`flex-1 py-2 text-[10px] font-medium transition-colors 
                         ${localFilters.cpoStatus === s ? 'bg-blue-500 text-white' : 'hover:bg-white/5 text-gray-400'}`}
-                    >
-                        {s === 'ALL' ? 'All' : s === 'HAS_CPO' ? 'Has CPO' : 'No CPO'}
-                    </button>
-                ))}
-             </div>
-             <InputGroup 
-                label="CPO Reference" 
-                placeholder="CPO-XXXX" 
-                value={localFilters.cpoReference}
-                onChange={(v) => handleChange('cpoReference', v)}
-            />
+              >
+                {s === 'ALL' ? 'All' : s === 'HAS_CPO' ? 'Has CPO' : 'No CPO'}
+              </button>
+            ))}
+          </div>
+          <InputGroup
+            label="CPO Reference"
+            placeholder="CPO-XXXX"
+            value={localFilters.cpoReference}
+            onChange={(v: string) => handleChange('cpoReference', v)}
+          />
         </div>
 
       </div>
 
       {/* --- Footer --- */}
       <div className="p-4 border-t border-white/5 bg-[#0F1115] flex gap-3">
-        <button 
-            onClick={() => setLocalFilters(INITIAL_FILTERS)}
-            className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-all"
+        <button
+          onClick={() => setLocalFilters(INITIAL_FILTERS)}
+          className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-all"
         >
-            Clear All
+          Clear All
         </button>
-        <button 
-            onClick={() => onApply(localFilters)}
-            className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all"
+        <button
+          onClick={() => onApply(localFilters)}
+          className="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all"
         >
-            Apply Filters
+          Apply Filters
         </button>
       </div>
     </div>
@@ -256,19 +256,19 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
 // Sub-component for Inputs to keep code clean
 function InputGroup({ label, icon, placeholder, value, onChange }: any) {
-    return (
-        <div className="w-full">
-            {label && <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>}
-            <div className="relative">
-                {icon && <div className="absolute left-3 top-3 text-gray-500">{icon}</div>}
-                <input 
-                    type="text"
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder={placeholder}
-                    className={`w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none ${icon ? 'pl-9' : ''}`}
-                />
-            </div>
-        </div>
-    )
+  return (
+    <div className="w-full">
+      {label && <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>}
+      <div className="relative">
+        {icon && <div className="absolute left-3 top-3 text-gray-500">{icon}</div>}
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none ${icon ? 'pl-9' : ''}`}
+        />
+      </div>
+    </div>
+  )
 }

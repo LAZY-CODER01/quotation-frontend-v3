@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import TicketColumn from "./TicketColumn";
-import api from "../../../lib/api";
 import { EmailExtraction } from "../../../types/email";
 import { FilterState } from "../../../types/filters";
+import { useInfiniteTickets } from "../../../hooks/useTickets";
 
 interface TicketsBoardProps {
   onTicketClick?: (ticket: EmailExtraction) => void;
@@ -13,93 +13,28 @@ interface TicketsBoardProps {
 }
 
 export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTrigger }: TicketsBoardProps) {
-  const [emails, setEmails] = useState<EmailExtraction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  // 1. Refactored to use useInfiniteTickets
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isLoading,
+    isFetchingNextPage
+  } = useInfiniteTickets(10, { refetchInterval: 30000 });
 
-  // --- 1. Initial Fetch ---
+  // 2. Listen for Load More Trigger from Header
   useEffect(() => {
-    fetchInitialBatch();
-  }, []);
-
-  // --- 2. Listen for Load More Trigger from Header ---
-  useEffect(() => {
-    if (loadMoreTrigger && loadMoreTrigger > 0) {
-      loadMoreOlderTickets();
+    if (loadMoreTrigger && loadMoreTrigger > 0 && hasNextPage) {
+      fetchNextPage();
     }
-  }, [loadMoreTrigger]);
+  }, [loadMoreTrigger, fetchNextPage, hasNextPage]);
 
-  const fetchInitialBatch = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/emails", { params: { days: 10 } });
-      if (response.data.success) {
-        setEmails(response.data.data);
-        setLastSyncTime(new Date().toISOString());
-      } else {
-        setError("Failed to load tickets");
-      }
-    } catch (err) {
-      setError("Failed to load tickets");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 3. Flatten data for display
+  const emails = useMemo(() => {
+    return data?.pages.flat() || [];
+  }, [data]);
 
-  const loadMoreOlderTickets = async () => {
-    if (emails.length === 0) return;
-
-    // Find oldest date for the 'before' cursor
-    const oldestDate = emails.reduce((oldest, current) => {
-      return new Date(current.received_at) < new Date(oldest) ? current.received_at : oldest;
-    }, emails[0].received_at);
-
-    try {
-      const response = await api.get("/emails", {
-        params: { before: oldestDate, limit: 20 }
-      });
-
-      if (response.data.success) {
-        const olderTickets = response.data.data;
-        setEmails(prevEmails => {
-          const emailMap = new Map(prevEmails.map(e => [e.gmail_id, e]));
-          olderTickets.forEach((update: EmailExtraction) => {
-            emailMap.set(update.gmail_id, update);
-          });
-          return Array.from(emailMap.values()).sort((a, b) =>
-            new Date(b.received_at).getTime() - new Date(a.received_at).getTime()
-          );
-        });
-      }
-    } catch (err) {
-      console.error("Pagination error:", err);
-    }
-  };
-
-  // --- 3. Polling for Delta Sync ---
-  useEffect(() => {
-    if (!lastSyncTime) return;
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await api.get("/emails", { params: { since: lastSyncTime } });
-        if (response.data.success && response.data.data.length > 0) {
-          const updates = response.data.data as EmailExtraction[];
-          setEmails(prevEmails => {
-            const emailMap = new Map(prevEmails.map(e => [e.gmail_id, e]));
-            updates.forEach(update => emailMap.set(update.gmail_id, update));
-            return Array.from(emailMap.values()).sort((a, b) =>
-              new Date(b.received_at).getTime() - new Date(a.received_at).getTime()
-            );
-          });
-          setLastSyncTime(new Date().toISOString());
-        }
-      } catch (e) { console.error("Polling error:", e); }
-    }, 5000);
-    return () => clearInterval(intervalId);
-  }, [lastSyncTime]);
-
-  // --- 4. Filtering Logic ---
+  // 4. Filtering Logic (same as before, but operating on cached data)
   const filteredEmails = useMemo(() => {
     let result = emails.filter(e => e.extraction_status === "VALID");
     if (!activeFilters) return result;
@@ -117,7 +52,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         const currentStatus = ticket.ticket_status ? norm(ticket.ticket_status) : 'OPEN';
         if (!acceptableStatuses.some(status => norm(status) === currentStatus)) return false;
       }
-      
+
       // Urgency, Date, and Search filters
       if (activeFilters.urgency !== 'ALL') {
         if ((ticket.ticket_priority?.toUpperCase() || 'NON_URGENT') !== activeFilters.urgency.toUpperCase()) return false;
@@ -129,21 +64,64 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
     });
   }, [emails, activeFilters]);
 
-  // --- 5. Columns Segregation ---
-  const getCol = (statusArray: string[]) => 
+  // 5. Columns Segregation
+  const getCol = (statusArray: string[]) =>
     filteredEmails.filter(e => statusArray.includes(e.ticket_status?.toUpperCase() || 'OPEN'));
 
   const todayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
 
-  if (loading && emails.length === 0) return <div className="p-8 text-center text-zinc-500">Loading tickets...</div>;
+  if (isLoading && emails.length === 0) return <div className="p-8 text-center text-zinc-500">Loading tickets...</div>;
 
   return (
     <div className="flex h-full gap-6 pb-4 overflow-x-auto bg-[#0F1115]">
-      <TicketColumn title="Inbox" count={getCol(['OPEN', 'INBOX']).length} color="blue" date={todayDate} tickets={getCol(['OPEN', 'INBOX'])} onTicketClick={onTicketClick} />
-      <TicketColumn title="Sent" count={getCol(['SENT']).length} color="yellow" tickets={getCol(['SENT'])} onTicketClick={onTicketClick} />
-      <TicketColumn title="Order Confirmed" count={getCol(['ORDER_CONFIRMED']).length} color="emerald" tickets={getCol(['ORDER_CONFIRMED'])} onTicketClick={onTicketClick} />
-      <TicketColumn title="Order Completed" count={getCol(['ORDER_COMPLETED']).length} color="green" tickets={getCol(['ORDER_COMPLETED'])} onTicketClick={onTicketClick} />
-      <TicketColumn title="Closed" count={getCol(['CLOSED']).length} color="blue" tickets={getCol(['CLOSED'])} onTicketClick={onTicketClick} />
+      {/* Inbox Column */}
+      <TicketColumn
+        title="Inbox"
+        count={getCol(['OPEN', 'INBOX']).length}
+        color="blue"
+        date={todayDate}
+        tickets={getCol(['OPEN', 'INBOX'])}
+        onTicketClick={onTicketClick}
+      />
+      {/* Sent Column */}
+      <TicketColumn
+        title="Sent"
+        count={getCol(['SENT']).length}
+        color="yellow"
+        tickets={getCol(['SENT'])}
+        onTicketClick={onTicketClick}
+      />
+      {/* Order Confirmed Column */}
+      <TicketColumn
+        title="Order Confirmed"
+        count={getCol(['ORDER_CONFIRMED']).length}
+        color="emerald"
+        tickets={getCol(['ORDER_CONFIRMED'])}
+        onTicketClick={onTicketClick}
+      />
+      {/* Order Completed Column */}
+      <TicketColumn
+        title="Order Completed"
+        count={getCol(['ORDER_COMPLETED']).length}
+        color="green"
+        tickets={getCol(['ORDER_COMPLETED'])}
+        onTicketClick={onTicketClick}
+      />
+      {/* Closed Column */}
+      <TicketColumn
+        title="Closed"
+        count={getCol(['CLOSED']).length}
+        color="blue"
+        tickets={getCol(['CLOSED'])}
+        onTicketClick={onTicketClick}
+      />
+
+      {/* Load More Indicator (Optional UX improvement if manual trigger is not enough) */}
+      {isFetchingNextPage && (
+        <div className="min-w-[200px] flex items-center justify-center text-zinc-500">
+          Loading more...
+        </div>
+      )}
     </div>
   );
 }

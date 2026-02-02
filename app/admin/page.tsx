@@ -5,8 +5,9 @@ import GmailSettings from "../components/admin/GmailSettings";
 import UserManagement from "../components/admin/UserManagement";
 import TicketRequests from "../components/admin/TicketRequests";
 import TicketMonitor from "../components/admin/TicketMonitor";
+import { Suspense } from "react";
 
-export default function AdminPage() {
+function AdminContent() {
     const searchParams = useSearchParams();
     // Default to 'monitor' or 'requests'
     const currentView = searchParams.get("view") || "monitor";
@@ -54,8 +55,16 @@ export default function AdminPage() {
     };
 
     return (
+        renderContent()
+    );
+}
+
+export default function AdminPage() {
+    return (
         <div className="h-full w-full bg-[#0F1115] overflow-y-auto">
-            {renderContent()}
+            <Suspense fallback={<div className="p-8 text-center text-zinc-500">Loading admin view...</div>}>
+                <AdminContent />
+            </Suspense>
         </div>
     );
 }

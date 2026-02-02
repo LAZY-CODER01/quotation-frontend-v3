@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import api from "../../../lib/api";
+import { useState } from "react";
 import {
     Loader2, Eye, ShoppingCart, FileText, MessageSquare,
     Monitor
 } from "lucide-react";
 import TicketSidebar from "../tickets/TicketSidebar";
 import { EmailExtraction } from "../../../types/email";
+import { useTickets } from "../../../hooks/useTickets";
 
 export default function TicketMonitor() {
-    const [tickets, setTickets] = useState<EmailExtraction[]>([]);
-    const [loading, setLoading] = useState(true);
+    // 1. Replaced separate state and useEffect with useTickets hook via React Query
+    const { data: tickets = [], isLoading, refetch, isFetching } = useTickets({
+        refetchInterval: 30000, // Poll every 30s
+    });
+
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
 
     const getLatestQuoteInfo = (t: EmailExtraction) => {
@@ -38,26 +41,6 @@ export default function TicketMonitor() {
             type: 'QUOTE'
         };
     };
-    const fetchTickets = async () => {
-        try {
-            setLoading(true);
-            const res = await api.get('/emails');
-            if (res.data.success) {
-                setTickets(res.data.data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch tickets", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchTickets();
-        // Optional: Poll every 30 seconds for real-time monitoring feel
-        const interval = setInterval(fetchTickets, 30000);
-        return () => clearInterval(interval);
-    }, []);
 
     // Helper to format date
     const formatDate = (dateString: string) => {
@@ -90,8 +73,8 @@ export default function TicketMonitor() {
                         {tickets.length} Tickets
                     </span>
                 </div>
-                <button onClick={fetchTickets} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
-                    <Loader2 size={16} className={loading ? "animate-spin" : ""} />
+                <button onClick={() => refetch()} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                    <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
                 </button>
             </div>
 
@@ -110,7 +93,7 @@ export default function TicketMonitor() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                        {loading && tickets.length === 0 ? (
+                        {isLoading && tickets.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                                     <div className="flex items-center justify-center gap-2">
@@ -227,10 +210,10 @@ export default function TicketMonitor() {
                     isOpen={!!selectedTicket}
                     onClose={() => {
                         setSelectedTicket(null);
-                        fetchTickets(); // Refresh data on close
+                        refetch(); // Refresh data on close
                     }}
                     onUpdate={() => {
-                        fetchTickets(); // Refresh on update
+                        refetch(); // Refresh on update
                     }}
                 />
             )}

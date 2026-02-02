@@ -1,10 +1,11 @@
 "use client";
 
 import SidebarItem from "./SidebarItem";
-import { 
-    Ticket, LogOut, ClipboardCheck, Mail, 
-    Users as UsersIcon, Monitor 
+import {
+    Ticket, LogOut, ClipboardCheck, Mail,
+    Users as UsersIcon, Monitor
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext"; // Adjust path as needed
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
@@ -13,7 +14,13 @@ export default function Sidebar() {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    
+
+    // Fix Hydration mismatch
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     // Helper to check active state including query params
     const isActive = (path: string, view?: string) => {
         if (pathname !== path) return false;
@@ -36,7 +43,7 @@ export default function Sidebar() {
                 </div>
 
                 {/* User Profile Snippet */}
-                {user && (
+                {isMounted && user && (
                     <div className="mb-6 mx-2 rounded-xl bg-[#181A1F] border border-white/5 p-3 flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold border border-purple-500/30">
                             {user.username.slice(0, 2).toUpperCase()}
@@ -57,7 +64,7 @@ export default function Sidebar() {
                     />
 
                     {/* Admin Section - Only visible to Admins */}
-                    {user?.role === 'ADMIN' && (
+                    {isMounted && user?.role === 'ADMIN' && (
                         <>
                             <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                                 Admin Controls
@@ -69,14 +76,14 @@ export default function Sidebar() {
                                 onClick={() => router.push('/admin?view=monitor')}
                                 active={isActive('/admin', 'monitor')}
                             />
-                            
+
                             <SidebarItem
                                 icon={<ClipboardCheck size={18} />}
                                 label="Completion Requests"
                                 onClick={() => router.push('/admin?view=requests')}
                                 active={isActive('/admin', 'requests')}
                             />
-                            
+
                             <SidebarItem
                                 icon={<UsersIcon size={18} />}
                                 label="User Management"
@@ -96,10 +103,10 @@ export default function Sidebar() {
 
                 {/* Footer */}
                 <div className="mt-auto border-t border-white/5 pt-4">
-                    <SidebarItem 
-                        icon={<LogOut size={18} className="text-red-400" />} 
-                        label="Sign Out" 
-                        onClick={logout} 
+                    <SidebarItem
+                        icon={<LogOut size={18} className="text-red-400" />}
+                        label="Sign Out"
+                        onClick={logout}
                     />
                 </div>
             </div>

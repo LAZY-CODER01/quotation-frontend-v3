@@ -7,7 +7,7 @@ interface TicketColumnProps {
   title: string;
   count: number;
   color: "blue" | "green" | "yellow" | "emerald";
-  date: string; // Keep this if it's for the column header itself
+  date?: string; // Keep this if it's for the column header itself
   tickets: EmailExtraction[];
   onTicketClick?: (ticket: EmailExtraction) => void;
 }
@@ -34,7 +34,7 @@ export default function TicketColumn({
 
     tickets.forEach((ticket) => {
       if (!ticket.received_at) return;
-      
+
       const dateObj = new Date(ticket.received_at);
       // Create a sortable key (YYYY-MM-DD)
       const dateKey = format(dateObj, "yyyy-MM-dd");
@@ -59,7 +59,7 @@ export default function TicketColumn({
 
   return (
     <div className="flex h-full  w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
-      
+
       {/* Header Area */}
       <div className="p-4 pb-2">
         <div className="flex items-center justify-between">
@@ -79,11 +79,11 @@ export default function TicketColumn({
       {/* Scrollable Content */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3 pt-0 custom-scrollbar">
         <div className="flex flex-col gap-3">
-          
+
           {groupedTickets.length > 0 ? (
             groupedTickets.map(([dateKey, groupTickets]) => (
               <div key={dateKey} className="flex flex-col gap-3">
-                
+
                 {/* 2. Date Separator Line */}
                 <div className="flex items-center gap-2 py-2 opacity-60">
                   <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
@@ -95,8 +95,8 @@ export default function TicketColumn({
 
                 {/* Tickets for this date */}
                 {groupTickets.map((ticket) => (
-                  <div 
-                    key={ticket.id} 
+                  <div
+                    key={ticket.id}
                     onClick={() => onTicketClick?.(ticket)}
                     className="cursor-pointer transition-transform duration-200 active:scale-[0.98]"
                   >
@@ -108,7 +108,7 @@ export default function TicketColumn({
           ) : (
             <div className="text-center text-xs text-zinc-500 py-4">No tickets</div>
           )}
-          
+
         </div>
       </div>
     </div>

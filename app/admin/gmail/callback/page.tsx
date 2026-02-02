@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api from "../../../../lib/api";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
-export default function GmailCallbackPage() {
+function CallbackContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
@@ -77,5 +77,17 @@ export default function GmailCallbackPage() {
                 <p className="text-gray-400">{message}</p>
             </div>
         </div>
+    );
+}
+
+export default function GmailCallbackPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen items-center justify-center bg-[#0F1115]">
+                <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+            </div>
+        }>
+            <CallbackContent />
+        </Suspense>
     );
 }
