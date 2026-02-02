@@ -8,14 +8,21 @@ import TicketsBoard from "./components/tickets/TicketBoard";
 import TicketSidebar from "./components/tickets/TicketSidebar";
 import RequirementsEditor from "./components/dashboard/RequirementsEditor"; 
 import FilterSidebar from "./components/layout/FilterSidebar"; // Check if this path matches your folder structure
-
+import { Clock, Loader2 } from "lucide-react";
 // Types
 import { FilterState, INITIAL_FILTERS } from "./../types/filters";
 import { EmailExtraction, ExtractionRequirement, QuotationFile, ActivityLog } from "../types/email";
 
 export default function DashboardPage() {
   const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
-
+const [loadingOlder, setLoadingOlder] = useState(false);
+const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
+const handleLoadMore = () => {
+  setLoadingOlder(true);
+  setLoadMoreTrigger(prev => prev + 1);
+  // Reset loading state after a delay or pass a callback to the board
+  setTimeout(() => setLoadingOlder(false), 1000);
+};
   // 1. State for Views & Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
@@ -116,7 +123,18 @@ export default function DashboardPage() {
           {/* Header Bar with Filter Button */}
           <div className="flex-none px-6 pt-6 pb-2 flex justify-between items-center bg-black">
             <h1 className="text-xl font-bold text-white">Tickets</h1>
-            
+            <button
+    onClick={handleLoadMore}
+    disabled={loadingOlder}
+    className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
+  >
+    {loadingOlder ? (
+      <Loader2 size={16} className="animate-spin text-emerald-500" />
+    ) : (
+      <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
+    )}
+    {loadingOlder ? "Loading..." : "Load Older"}
+  </button>
             <button 
               onClick={() => setIsFilterOpen(true)}
               className={`
@@ -138,6 +156,7 @@ export default function DashboardPage() {
               <TicketsBoard 
                 onTicketClick={setSelectedTicket} 
                 activeFilters={filters}
+                loadMoreTrigger={loadMoreTrigger}
               />
             </div>
           </div>
