@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "../../../lib/api";
 import {
     Loader2, Eye, ShoppingCart, FileText, MessageSquare,
@@ -20,6 +20,15 @@ export default function TicketMonitor() {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+    // ✅ Delta Sync State
+    const [lastSync, setLastSync] = useState<string | null>(null);
+    const lastSyncRef = useRef<string | null>(null); // Ref to access inside interval closure
+
+    // Update ref when state changes
+    useEffect(() => {
+        lastSyncRef.current = lastSync;
+    }, [lastSync]);
 
     const getLatestQuoteInfo = (t: EmailExtraction) => {
         // Case 1: Order Confirmed -> Show CPO Amount (Blue)
@@ -46,28 +55,84 @@ export default function TicketMonitor() {
         };
     };
 
-    const fetchTickets = async (pageNum: number, reset = false) => {
+    const fetchTickets = async (pageNum: number, isPolling = false) => {
         try {
-            if (pageNum === 1) setLoading(true);
-            else setIsFetchingMore(true);
+            // Only show loader on initial full fetch, not background polling
+            if (pageNum === 1 && !isPolling) setLoading(true);
+            if (pageNum > 1) setIsFetchingMore(true);
 
-            const res = await api.get('/emails', {
-                params: { page: pageNum, limit: 50 }
-            });
+            const params: any = { page: pageNum, limit: 50 };
+
+            // ✅ DELTA SYNC REQUEST
+            // Only send 'since' if polling page 1 and we have a lastSync time
+            if (isPolling && pageNum === 1 && lastSyncRef.current) {
+                params.since = lastSyncRef.current;
+            }
+
+            const res = await api.get('/emails', { params });
 
             if (res.data.success) {
-                const newTickets = res.data.data;
-                if (reset) {
-                    setTickets(newTickets);
-                } else {
-                    setTickets(prev => [...prev, ...newTickets]);
+                const newData = res.data.data;
+                const isDelta = res.data.is_delta;
+
+                // ✅ UPDATE LAST SYNC TIME
+                // Find the latest updated_at or received_at in the fetched data
+                if (newData.length > 0) {
+                    const maxDate = newData.reduce((max: string, t: EmailExtraction) => {
+                        const tDate = t.updated_at || t.received_at;
+                        // specific comparison needed? string ISO comparison works fine
+                        return (!max || tDate > max) ? tDate : max;
+                    }, lastSyncRef.current || "");
+
+                    if (maxDate) setLastSync(maxDate);
                 }
 
-                // If we got fewer than limit, we reached the end
-                if (newTickets.length < 50) {
-                    setHasMore(false);
+                // Logic:
+                // 1. If Delta Sync (isDelta=true): Merge.
+                // 2. If Polling (isPolling=true): Merge (even if backend returned full page 1, we just update those items).
+                // 3. If Initial Load (pageNum=1 && !isPolling): Replace.
+                // 4. If Load More (pageNum > 1): Append.
+
+                if (isDelta || (isPolling && pageNum === 1)) {
+                    // ✅ MERGE LOGIC (Delta Sync / Polling Update)
+                    setTickets(prev => {
+                        const ticketMap = new Map(prev.map(t => [t.gmail_id, t]));
+
+                        newData.forEach((t: EmailExtraction) => {
+                            ticketMap.set(t.gmail_id, t);
+                        });
+
+                        // Convert back to array and sort (descending time)
+                        return Array.from(ticketMap.values()).sort((a, b) => {
+                            const dateA = new Date(a.received_at || 0).getTime();
+                            const dateB = new Date(b.received_at || 0).getTime();
+                            return dateB - dateA;
+                        });
+                    });
+
+                    if (isDelta) console.log(`Delta Sync: Merged ${newData.length} updates.`);
                 } else {
-                    setHasMore(true);
+                    // Normal Pagination / Initial Load
+                    if (pageNum === 1) {
+                        setTickets(newData);
+                        // Initialize lastSync if not set
+                        if (!lastSyncRef.current && newData.length > 0) {
+                            const maxDate = newData.reduce((max: string, t: EmailExtraction) => {
+                                const tDate = t.updated_at || t.received_at;
+                                return (!max || tDate > max) ? tDate : max;
+                            }, "");
+                            setLastSync(maxDate);
+                        }
+                    } else {
+                        setTickets(prev => [...prev, ...newData]);
+                    }
+
+                    // Handle "Load More" visibility
+                    if (newData.length < 50) {
+                        setHasMore(false);
+                    } else {
+                        setHasMore(true);
+                    }
                 }
             }
         } catch (error) {
@@ -78,14 +143,25 @@ export default function TicketMonitor() {
         }
     };
 
-    // Initial Load
+    // Initial Load & Polling Interval
     useEffect(() => {
-        fetchTickets(1, true);
+        // Initial Fetch
+        fetchTickets(1);
+
+        // ✅ Setup Polling (30s)
+        const interval = setInterval(() => {
+            fetchTickets(1, true);
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, []);
 
-    // Socket.IO Connection
+    // Socket.IO Connection (Keep as complementary or fallback mechanism)
     useEffect(() => {
-        const socket = io(SOCKET_URL);
+        const socket = io(SOCKET_URL, {
+            transports: ['websocket'], // ✅ Force WebSocket
+            reconnectionAttempts: 5,
+        });
 
         socket.on('connect', () => {
             console.log("Connected to WebSocket");
@@ -93,9 +169,9 @@ export default function TicketMonitor() {
 
         socket.on('ticket_update', (event: { type: string, data: EmailExtraction }) => {
             console.log("Socket Update:", event);
+            // We can reuse the same merge logic implicitly by updating state
             if (event.type === 'NEW') {
                 setTickets(prev => {
-                    // Avoid duplicates if possible (though backend ID check is better)
                     if (prev.find(t => t.gmail_id === event.data.gmail_id)) return prev;
                     return [event.data, ...prev];
                 });
@@ -103,8 +179,13 @@ export default function TicketMonitor() {
                 setTickets(prev => prev.map(t =>
                     t.gmail_id === event.data.gmail_id ? event.data : t
                 ));
-                // Update selected ticket if it's open
                 setSelectedTicket(curr => curr?.gmail_id === event.data.gmail_id ? event.data : curr);
+            }
+
+            // Also update lastSync from socket events to keep polling efficient
+            const tDate = event.data.updated_at || event.data.received_at;
+            if (tDate) {
+                setLastSync(prev => (!prev || tDate > prev) ? tDate : prev);
             }
         });
 
