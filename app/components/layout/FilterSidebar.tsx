@@ -129,7 +129,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
         <hr className="border-white/5" />
 
         {/* 4. Company & Employee */}
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
            <div>
              <label className="text-xs text-gray-400 mb-1.5 block">Company</label>
              <div className="relative">
@@ -159,7 +159,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
                 </select>
              </div>
            </div>
-        </div>
+        </div> */}
 
         {/* 5. Inputs (Email, Ticket #, Quotation) */}
         <div className="space-y-4">
