@@ -51,7 +51,6 @@ export interface EmailExtraction {
   extraction_status: string;
   extraction_result: ExtractionResult;
   created_at: string;
-  updated_at?: string;
   activity_logs?: ActivityLog[];
   internal_notes?: any[];
   assigned_to?: string;
