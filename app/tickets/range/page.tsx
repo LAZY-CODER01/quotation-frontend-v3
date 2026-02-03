@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Calendar } from "lucide-react";
 import api from "../../../lib/api";
 import { EmailExtraction, QuotationFile, ActivityLog } from "../../../types/email";
+// FIX: Corrected import paths to use ../../ (2 levels up to 'app')
 import TicketSidebar from "../../components/tickets/TicketSidebar";
 import TicketColumn from "../../components/tickets/TicketColumn";
 import RequirementsEditor from "../../components/dashboard/RequirementsEditor";
+import TicketCard from "../../components/tickets/TicketCard"; 
 
-export default function TicketRangePage() {
+// 1. Create a sub-component for the logic that uses search params
+function TicketRangeContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const fromDate = searchParams.get("from");
@@ -97,7 +100,6 @@ export default function TicketRangePage() {
 
     return (
         <div className="h-screen flex flex-col bg-[#0F1115] text-white">
-
             {/* Header */}
             <div className="bg-black border-b border-white/10 px-6 py-4 flex-none z-30">
                 <div className="flex items-center gap-4">
@@ -213,4 +215,16 @@ export default function TicketRangePage() {
         </div>
     );
 }
-//
+
+// 2. Wrap the content in Suspense for the Default Export
+export default function TicketRangePage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-[#0F1115] text-white">
+                <Loader2 size={40} className="animate-spin text-emerald-500" />
+            </div>
+        }>
+            <TicketRangeContent />
+        </Suspense>
+    );
+}
