@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Calendar } from "lucide-react";
 import api from "../../../lib/api";
 import { EmailExtraction, QuotationFile, ActivityLog } from "../../../types/email";
-import TicketCard from "../../components/tickets/TicketCard";
 import TicketSidebar from "../../components/tickets/TicketSidebar";
+import TicketColumn from "../../components/tickets/TicketColumn";
 import RequirementsEditor from "../../components/dashboard/RequirementsEditor";
 
 export default function TicketRangePage() {
@@ -79,7 +79,7 @@ export default function TicketRangePage() {
                 }
 
                 const response = await api.get("/emails", {
-                    params: { start_date: start, end_date: end, limit: 100 } // Increased limit for archive view
+                    params: { start_date: start, end_date: end, limit: 100 }
                 });
 
                 if (response.data.success) {
@@ -96,10 +96,10 @@ export default function TicketRangePage() {
     }, [fromDate, toDate]);
 
     return (
-        <div className="min-h-screen bg-[#0F1115] text-white">
+        <div className="h-screen flex flex-col bg-[#0F1115] text-white">
 
             {/* Header */}
-            <div className="bg-black border-b border-white/10 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+            <div className="bg-black border-b border-white/10 px-6 py-4 flex-none z-30">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={handleBack}
@@ -128,29 +128,70 @@ export default function TicketRangePage() {
                     }}
                 />
             ) : (
-                <div className="p-6">
+                <div className="flex-1 overflow-hidden flex flex-col relative w-full">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500">
+                        <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
                             <Loader2 size={40} className="animate-spin mb-4 text-emerald-500" />
                             <p>Fetching tickets...</p>
                         </div>
                     ) : tickets.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-[60vh] text-gray-500">
+                        <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
                             <p className="text-lg">No tickets found in this range.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {tickets.map((ticket) => (
-                                /* FIX START: Wrap in div and use data={ticket} */
-                                <div 
-                                    key={ticket.gmail_id} 
-                                    onClick={() => setSelectedTicket(ticket)}
-                                    className="cursor-pointer transition-transform duration-200 active:scale-[0.98]"
-                                >
-                                    <TicketCard data={ticket} />
-                                </div>
-                                /* FIX END */
-                            ))}
+                        <div className="flex-1 w-full overflow-x-auto overflow-y-hidden pb-6 bg-[#0F1115]">
+                            <div className="flex h-full gap-6 min-w-max px-6">
+                                {/* Inbox Column */}
+                                <TicketColumn
+                                    title="Inbox"
+                                    count={tickets.filter(t => ['OPEN', 'INBOX'].includes(t.ticket_status?.toUpperCase() || 'OPEN')).length}
+                                    color="blue"
+                                    date="-"
+                                    tickets={tickets.filter(t => ['OPEN', 'INBOX'].includes(t.ticket_status?.toUpperCase() || 'OPEN'))}
+                                    onTicketClick={setSelectedTicket}
+                                    slug="inbox"
+                                />
+                                {/* Sent Column */}
+                                <TicketColumn
+                                    title="Sent"
+                                    count={tickets.filter(t => t.ticket_status === 'SENT').length}
+                                    color="yellow"
+                                    date="-"
+                                    tickets={tickets.filter(t => t.ticket_status === 'SENT')}
+                                    onTicketClick={setSelectedTicket}
+                                    slug="sent"
+                                />
+                                {/* Order Confirmed Column */}
+                                <TicketColumn
+                                    title="Order Confirmed"
+                                    count={tickets.filter(t => t.ticket_status === 'ORDER_CONFIRMED').length}
+                                    color="emerald"
+                                    date="-"
+                                    tickets={tickets.filter(t => t.ticket_status === 'ORDER_CONFIRMED')}
+                                    onTicketClick={setSelectedTicket}
+                                    slug="confirmed"
+                                />
+                                {/* Order Completed Column */}
+                                <TicketColumn
+                                    title="Order Completed"
+                                    count={tickets.filter(t => t.ticket_status === 'ORDER_COMPLETED').length}
+                                    color="green"
+                                    date="-"
+                                    tickets={tickets.filter(t => t.ticket_status === 'ORDER_COMPLETED')}
+                                    onTicketClick={setSelectedTicket}
+                                    slug="completed"
+                                />
+                                {/* Closed Column */}
+                                <TicketColumn
+                                    title="Closed"
+                                    count={tickets.filter(t => t.ticket_status === 'CLOSED').length}
+                                    color="blue"
+                                    date="-"
+                                    tickets={tickets.filter(t => t.ticket_status === 'CLOSED')}
+                                    onTicketClick={setSelectedTicket}
+                                    slug="closed"
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
