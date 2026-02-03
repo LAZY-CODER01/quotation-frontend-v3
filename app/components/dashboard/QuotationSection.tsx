@@ -35,7 +35,7 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
 
   return (
     <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
-      
+
       {/* File Info */}
       <div className="flex items-center gap-3 overflow-hidden flex-1">
         <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
@@ -43,12 +43,17 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
         </div>
         <div className="min-w-0">
           <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
+            {/* ✅ FIX: Show Reference ID instead of filename */}
+            {file.reference_id || file.name}
+          </p>
+          <p className="text-[10px] text-gray-500 truncate" title={file.name}>
+            {/* Show Real Filename below */}
             {file.name}
           </p>
           <p className="text-[10px] text-gray-500">
-            {new Date(file.uploaded_at).toLocaleString([], { 
-              year: 'numeric', month: 'short', day: 'numeric', 
-              hour: '2-digit', minute: '2-digit' 
+            {new Date(file.uploaded_at).toLocaleString([], {
+              year: 'numeric', month: 'short', day: 'numeric',
+              hour: '2-digit', minute: '2-digit'
             })}
           </p>
         </div>
@@ -56,15 +61,15 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
 
       {/* Right Side: Input + Link */}
       <div className="flex items-center gap-3">
-        
+
         {/* Editable Amount Input */}
         <div className="flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded px-2 py-1.5 focus-within:border-blue-500/50 transition-colors w-24 sm:w-28">
           <span className="text-[10px] font-bold text-green-500">AED</span>
           <input
             type="text"
             value={amount}
-            readOnly 
-          
+            readOnly
+
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             placeholder="0.00"
@@ -90,7 +95,7 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
 export default function QuotationSection({ ticket, onFileAdded }: QuotationSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingAmount, setPendingAmount] = useState("");
@@ -99,7 +104,7 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
     const file = e.target.files?.[0];
     if (file) {
       setPendingFile(file);
-      setPendingAmount(""); 
+      setPendingAmount("");
     }
   };
 
@@ -146,7 +151,7 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
 
   return (
     <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -170,8 +175,8 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
               </p>
               <p className="text-[10px] text-blue-400">Ready to upload</p>
             </div>
-            <button 
-              onClick={handleCancel} 
+            <button
+              onClick={handleCancel}
               className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
             >
               <X size={16} />
@@ -181,8 +186,8 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
           <div className="flex items-center gap-3">
             <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
               <span className="text-xs font-bold text-gray-500">AED</span>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={pendingAmount}
                 onChange={(e) => setPendingAmount(e.target.value)}
                 placeholder="Enter Price..."
@@ -190,7 +195,7 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
                 autoFocus
               />
             </div>
-            <button 
+            <button
               onClick={handleUpload}
               disabled={uploading || !pendingAmount}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-all shadow-lg shadow-blue-900/20"

@@ -6,23 +6,28 @@ import { Filter } from "lucide-react";
 // Components
 import TicketsBoard from "./components/tickets/TicketBoard";
 import TicketSidebar from "./components/tickets/TicketSidebar";
-import RequirementsEditor from "./components/dashboard/RequirementsEditor"; 
+import RequirementsEditor from "./components/dashboard/RequirementsEditor";
 import FilterSidebar from "./components/layout/FilterSidebar"; // Check if this path matches your folder structure
 import { Clock, Loader2 } from "lucide-react";
 // Types
 import { FilterState, INITIAL_FILTERS } from "./../types/filters";
 import { EmailExtraction, ExtractionRequirement, QuotationFile, ActivityLog } from "../types/email";
+import DateRangeModal from "./components/modals/DateRangeModal";
 
 export default function DashboardPage() {
   const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
-const [loadingOlder, setLoadingOlder] = useState(false);
-const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
-const handleLoadMore = () => {
-  setLoadingOlder(true);
-  setLoadMoreTrigger(prev => prev + 1);
-  // Reset loading state after a delay or pass a callback to the board
-  setTimeout(() => setLoadingOlder(false), 1000);
-};
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
+
+  // ✅ NEW: Date Range Modal State
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+
+  const handleLoadMore = () => {
+    setLoadingOlder(true);
+    setLoadMoreTrigger(prev => prev + 1);
+    // Reset loading state after a delay or pass a callback to the board
+    setTimeout(() => setLoadingOlder(false), 1000);
+  };
   // 1. State for Views & Filters
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
@@ -102,13 +107,19 @@ const handleLoadMore = () => {
 
   return (
     <div className="relative h-full w-full bg-[#0F1115]">
-      
+
       {/* Global Filter Sidebar (Always mounted, visibility controlled by prop) */}
-      <FilterSidebar 
+      <FilterSidebar
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         currentFilters={filters}
         onApply={handleApplyFilters}
+      />
+
+      {/* ✅ NEW: Date Range Modal */}
+      <DateRangeModal
+        isOpen={isDateModalOpen}
+        onClose={() => setIsDateModalOpen(false)}
       />
 
       {isEditorOpen && selectedTicket ? (
@@ -119,28 +130,26 @@ const handleLoadMore = () => {
         />
       ) : (
         <div className="flex flex-col h-full"> {/* Changed to flex-col to stack Header + Board */}
-          
+
           {/* Header Bar with Filter Button */}
           <div className="flex-none px-6 pt-6 pb-2 flex justify-between items-center bg-black">
             <h1 className="text-xl font-bold text-white">Tickets</h1>
+
+            {/* ✅ FIXED: "Load Older" opens Modal */}
             <button
-    onClick={handleLoadMore}
-    disabled={loadingOlder}
-    className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
-  >
-    {loadingOlder ? (
-      <Loader2 size={16} className="animate-spin text-emerald-500" />
-    ) : (
-      <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
-    )}
-    {loadingOlder ? "Loading..." : "Load Older"}
-  </button>
-            <button 
+              onClick={() => setIsDateModalOpen(true)}
+              className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
+            >
+              <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
+              {"Load Older"}
+            </button>
+
+            <button
               onClick={() => setIsFilterOpen(true)}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border
                 ${isFilterOpen || JSON.stringify(filters) !== JSON.stringify(INITIAL_FILTERS)
-                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' 
+                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
                   : 'bg-[rgb(var(--panel))] border-[rgb(var(--border))] text-gray-300 hover:text-white hover:border-emerald-500'
                 }
               `}
@@ -153,8 +162,8 @@ const handleLoadMore = () => {
           {/* Main Board Area */}
           <div className="flex-1 w-full overflow-x-auto overflow-y-hidden px-6 pb-6 bg-black">
             <div className="h-full min-w-max bg-black">
-              <TicketsBoard 
-                onTicketClick={setSelectedTicket} 
+              <TicketsBoard
+                onTicketClick={setSelectedTicket}
                 activeFilters={filters}
                 loadMoreTrigger={loadMoreTrigger}
               />
@@ -167,8 +176,8 @@ const handleLoadMore = () => {
             isOpen={!!selectedTicket}
             onClose={() => setSelectedTicket(null)}
             onEditRequirements={handleOpenEditor}
-            onFileAdded={handleFileAdded} 
-            onCPOAdded={handleCPOAdded} 
+            onFileAdded={handleFileAdded}
+            onCPOAdded={handleCPOAdded}
             onNoteAdded={handleNoteAdded}
             onStatusChanged={handleStatusChanged}
             onActivityLogAdded={handleActivityLogAdded}

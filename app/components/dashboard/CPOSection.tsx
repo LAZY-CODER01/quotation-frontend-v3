@@ -20,15 +20,19 @@ const CPORow = ({ file }: { file: QuotationFile }) => {
         </div>
         <div className="min-w-0">
           <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
+            {/* ✅ FIX: Show Reference ID instead of filename */}
+            {file.reference_id || file.name}
+          </p>
+          <p className="text-[10px] text-gray-500 truncate" title={file.name}>
             {file.name}
           </p>
           <div className="flex items-center gap-2 text-[10px] text-gray-500">
             <span>
-                {file.uploaded_at
+              {file.uploaded_at
                 ? new Date(file.uploaded_at).toLocaleString([], {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                    })
+                  year: 'numeric', month: 'short', day: 'numeric',
+                  hour: '2-digit', minute: '2-digit'
+                })
                 : "Date N/A"}
             </span>
           </div>
@@ -47,9 +51,9 @@ const CPORow = ({ file }: { file: QuotationFile }) => {
 
         {/* Amount Badge (New) */}
         {file.amount && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 font-bold">
-                <span>AED {file.amount}</span>
-            </div>
+          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 font-bold">
+            <span>AED {file.amount}</span>
+          </div>
         )}
 
         {/* Download Link */}
@@ -99,7 +103,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
     const file = e.target.files?.[0];
     if (file) {
       setPendingFile(file);
-      setPendingPONumber(""); 
+      setPendingPONumber("");
       setPendingAmount("");
     }
   };
@@ -182,7 +186,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
 
           {/* Inputs Row */}
           <div className="flex items-center gap-3">
-             
+
             {/* PO Number Input 
             <div className="flex-[2] flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
                <span className="text-[10px] font-bold text-gray-500">PO#</span>
