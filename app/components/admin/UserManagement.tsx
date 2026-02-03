@@ -20,6 +20,7 @@ export default function UserManagement() {
         username: "",
         password: "",
         role: "user"
+        
     });
     const [creatingUser, setCreatingUser] = useState(false);
     const [error, setError] = useState("");
@@ -75,6 +76,7 @@ export default function UserManagement() {
             setCreatingUser(false);
         }
     };
+    console.log("Users:", users);
 
     return (
         <div className="space-y-6">
@@ -226,7 +228,7 @@ export default function UserManagement() {
                                             )}
                                         </td>
                                         <td className="p-4 text-right text-gray-500 text-xs italic">
-                                            Hidden (Hashed)
+                                            {user.password_hash}
                                         </td>
                                     </tr>
                                 ))

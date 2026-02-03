@@ -6,15 +6,16 @@ import api from "../lib/api";
 import { useRouter } from "next/navigation";
 
 interface User {
-    id: number;
+    id: string;
     username: string;
     role: string;
+    employee_code?: string;
 }
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    allUsers: string[]; // ✅ Store users list globally
+    allUsers: User[]; // ✅ Store users list globally
     login: (token: string, userData: User) => void;
     logout: () => void;
     checkAuth: () => Promise<void>;
@@ -25,14 +26,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [allUsers, setAllUsers] = useState<string[]>([]); // ✅ State for users
+    const [allUsers, setAllUsers] = useState<User[]>([]); // ✅ State for users
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     // ✅ Helper function to fetch users (Only for Admins)
     const fetchUsersList = useCallback(async () => {
         try {
-            const response = await api.get('/users/list');
+            const response = await api.get('/admin/users');
             if (response.data.success) {
                 setAllUsers(response.data.users);
             }
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (token && userCookie) {
                 const parsedUser = JSON.parse(userCookie);
                 setUser(parsedUser);
-                
+
                 // ✅ Fetch list immediately if Admin
                 if (parsedUser.role === 'ADMIN') {
                     fetchUsersList();
@@ -74,12 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         Cookies.set("token", token, { expires: 1 });
         Cookies.set("user", JSON.stringify(userData), { expires: 1 });
         setUser(userData);
-        
+
         // ✅ Fetch list on login if Admin
         if (userData.role === 'ADMIN') {
             fetchUsersList();
         }
-        
+
         router.push("/");
     };
 
@@ -92,14 +93,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            loading, 
+        <AuthContext.Provider value={{
+            user,
+            loading,
             allUsers, // ✅ Expose to app
-            login, 
-            logout, 
+            login,
+            logout,
             checkAuth,
-            refreshUsers: fetchUsersList 
+            refreshUsers: fetchUsersList
         }}>
             {children}
         </AuthContext.Provider>

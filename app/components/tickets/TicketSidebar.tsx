@@ -389,7 +389,7 @@ export default function TicketSidebar({
                 <div className="relative">
                   <select value={currentAssignee} onChange={handleAssignChange} className="w-full bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white appearance-none cursor-pointer hover:border-white/20 focus:outline-none focus:border-emerald-500/50">
                     <option value="">Unassigned</option>
-                    {allUsers.map((u) => <option key={u} value={u}>{u}</option>)}
+                    {allUsers.map((u: any) => <option key={u.id} value={u.username}>{u.username}</option>)}
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-3 text-gray-500 pointer-events-none" />
                 </div>
