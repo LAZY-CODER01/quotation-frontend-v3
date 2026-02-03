@@ -82,6 +82,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         date={todayDate}
         tickets={getCol(['OPEN', 'INBOX'])}
         onTicketClick={onTicketClick}
+        slug="inbox"
       />
       {/* Sent Column */}
       <TicketColumn
@@ -90,6 +91,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         color="yellow"
         tickets={getCol(['SENT'])}
         onTicketClick={onTicketClick}
+        slug="sent"
       />
       {/* Order Confirmed Column */}
       <TicketColumn
@@ -98,6 +100,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         color="emerald"
         tickets={getCol(['ORDER_CONFIRMED'])}
         onTicketClick={onTicketClick}
+        slug="confirmed"
       />
       {/* Order Completed Column */}
       <TicketColumn
@@ -106,6 +109,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         color="green"
         tickets={getCol(['ORDER_COMPLETED'])}
         onTicketClick={onTicketClick}
+        slug="completed"
       />
       {/* Closed Column */}
       <TicketColumn
@@ -114,6 +118,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         color="blue"
         tickets={getCol(['CLOSED'])}
         onTicketClick={onTicketClick}
+        slug="closed"
       />
 
       {/* Load More Indicator (Optional UX improvement if manual trigger is not enough) */}

@@ -1,4 +1,6 @@
 import React, { useMemo } from "react";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import TicketCard from "./TicketCard";
 import { EmailExtraction } from "../../../types/email";
 import { format, isToday, isYesterday } from "date-fns";
@@ -10,6 +12,7 @@ interface TicketColumnProps {
   date?: string; // Keep this if it's for the column header itself
   tickets: EmailExtraction[];
   onTicketClick?: (ticket: EmailExtraction) => void;
+  slug: string;
 }
 
 const colorMap = {
@@ -26,6 +29,7 @@ export default function TicketColumn({
   date,
   tickets,
   onTicketClick,
+  slug,
 }: TicketColumnProps) {
 
   // 1. Group tickets by Date
@@ -67,9 +71,18 @@ export default function TicketColumn({
             <span className={`h-2.5 w-2.5 rounded-full ${colorMap[color]}`} />
             <h3 className="font-semibold">{title}</h3>
           </div>
-          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[hsl(var(--bg))] px-1.5 text-xs text-[rgb(var(--muted))]">
-            {count}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[hsl(var(--bg))] px-1.5 text-xs text-[rgb(var(--muted))]">
+              {count}
+            </span>
+            <Link
+              href={`/tickets/status/${slug}`}
+              target="_blank"
+              className="text-gray-500 hover:text-white transition-colors"
+            >
+              <ExternalLink size={14} />
+            </Link>
+          </div>
         </div>
         <div className="mt-2 h-[1px] w-full bg-[rgb(var(--border))]" />
         {/* Optional: Keep global column date or remove if redundant */}
