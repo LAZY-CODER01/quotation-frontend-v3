@@ -9,6 +9,7 @@ interface UserData {
     username: string;
     employee_code: string;
     role: string;
+    password_hash: string;
 }
 
 export default function UserManagement() {
@@ -20,7 +21,7 @@ export default function UserManagement() {
         username: "",
         password: "",
         role: "user"
-        
+
     });
     const [creatingUser, setCreatingUser] = useState(false);
     const [error, setError] = useState("");
