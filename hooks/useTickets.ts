@@ -62,9 +62,9 @@ export function useInfiniteTickets(
 
             return oldestDate;
         },
-        // Keep data fresh for 1 min
-        staleTime: 60 * 1000,
+        // Keep data fresh for 5 seconds
+        staleTime: 5000,
         // Add polling support
-        refetchInterval: options.refetchInterval ?? 30000,
+        refetchInterval: options.refetchInterval ?? 5000,
     });
 }

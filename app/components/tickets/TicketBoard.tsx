@@ -14,13 +14,14 @@ interface TicketsBoardProps {
 
 export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTrigger }: TicketsBoardProps) {
   // 1. Refactored to use useInfiniteTickets
+  // 1. Refactored to use useInfiniteTickets
   const {
     data,
     fetchNextPage,
     hasNextPage,
     isLoading,
     isFetchingNextPage
-  } = useInfiniteTickets(10, { refetchInterval: 30000 });
+  } = useInfiniteTickets(10, { refetchInterval: 5000 });
 
   // 2. Listen for Load More Trigger from Header
   useEffect(() => {
