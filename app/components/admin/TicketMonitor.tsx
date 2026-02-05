@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Loader2, Eye, ShoppingCart, FileText, MessageSquare,
     Monitor
@@ -16,6 +16,20 @@ export default function TicketMonitor() {
     });
 
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
+
+    // ✅ FIX: Keep selectedTicket in sync with latest data
+    useEffect(() => {
+        if (selectedTicket && tickets.length > 0) {
+            const updated = tickets.find(t => t.gmail_id === selectedTicket.gmail_id);
+            if (updated) {
+                // Only update if actually changed to avoid loop (though React compares ref mostly)
+                // Since this object comes from React Query, it's a new ref if data changed.
+                if (updated !== selectedTicket) {
+                    setSelectedTicket(updated);
+                }
+            }
+        }
+    }, [tickets, selectedTicket]);
 
     const getLatestQuoteInfo = (t: EmailExtraction) => {
         // Case 1: Order Confirmed -> Show CPO Amount (Blue)

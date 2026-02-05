@@ -28,6 +28,16 @@ export default function TicketRequests() {
         fetchCompletionRequests();
     }, []);
 
+    // ✅ FIX: Keep selectedTicket in sync with latest data
+    useEffect(() => {
+        if (selectedTicket && completionRequests.length > 0) {
+            const updated = completionRequests.find(t => t.gmail_id === selectedTicket.gmail_id);
+            if (updated && updated !== selectedTicket) {
+                setSelectedTicket(updated);
+            }
+        }
+    }, [completionRequests, selectedTicket]);
+
     return (
         <div className="bg-[#181A1F] rounded-xl border border-white/10 p-6">
             <div className="flex items-center justify-between mb-6">

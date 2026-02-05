@@ -63,12 +63,12 @@ const FileRow = ({
         </div>
         <div className="min-w-0">
           <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
-            {/* ✅ FIX: Show Reference ID instead of filename */}
-            {file.reference_id || file.name}
-          </p>
-          <p className="text-[10px] text-gray-500 truncate" title={file.name}>
-            {/* Show Real Filename below */}
+            {/* ✅ FIX: Show Filename as primary */}
             {file.name}
+          </p>
+          <p className="text-[10px] text-gray-500 truncate" title={file.reference_id}>
+            {/* Show Reference ID below */}
+            {file.reference_id || "No Ref ID"}
           </p>
           <p className="text-[10px] text-gray-500">
             {new Date(file.uploaded_at).toLocaleString([], {
