@@ -1,17 +1,30 @@
 import React, { useState, useRef } from "react";
-import { Upload, FileText, Loader2, ExternalLink, X, Check } from "lucide-react";
+import { Upload, FileText, Loader2, ExternalLink, X, Check, Trash2, Download } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 
 interface QuotationSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
+  onFileDeleted?: () => void;
+  isAdmin?: boolean;
 }
 
 // Sub-component for existing files (View Only / Edit Price)
-const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) => {
+const FileRow = ({
+  file,
+  gmailId,
+  isAdmin,
+  onDelete
+}: {
+  file: QuotationFile;
+  gmailId: string;
+  isAdmin?: boolean;
+  onDelete: (fileId: string) => void;
+}) => {
   const [amount, setAmount] = useState(file.amount || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSave = async () => {
     if (amount === file.amount) return;
@@ -27,6 +40,13 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this file?")) return;
+    setIsDeleting(true);
+    await onDelete(file.id);
+    setIsDeleting(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -59,7 +79,7 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
         </div>
       </div>
 
-      {/* Right Side: Input + Link */}
+      {/* Right Side: Input + Actions */}
       <div className="flex items-center gap-3">
 
         {/* Editable Amount Input */}
@@ -69,7 +89,6 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
             type="text"
             value={amount}
             readOnly
-
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             placeholder="0.00"
@@ -78,21 +97,34 @@ const FileRow = ({ file, gmailId }: { file: QuotationFile; gmailId: string }) =>
           {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
         </div>
 
-        {/* Download Link */}
+        {/* Clear Download Button */}
         <a
           href={file.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded border border-white/5 hover:border-white/10 transition-all"
         >
-          <ExternalLink size={14} />
+          <Download size={12} />
+          <span>Download</span>
         </a>
+
+        {/* Delete Button (Admin Only) */}
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            title="Delete File (Admin)"
+          >
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-export default function QuotationSection({ ticket, onFileAdded }: QuotationSectionProps) {
+export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, isAdmin }: QuotationSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -146,6 +178,20 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
       alert("Upload error");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      const res = await api.delete(`/quotation/delete/${fileId}`);
+      if (res.data.success) {
+        if (onFileDeleted) onFileDeleted();
+      } else {
+        alert("Failed to delete file");
+      }
+    } catch (error) {
+      console.error("Delete error", error);
+      alert("Error deleting file");
     }
   };
 
@@ -235,7 +281,13 @@ export default function QuotationSection({ ticket, onFileAdded }: QuotationSecti
           [...ticket.quotation_files]
             .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
             .map((file) => (
-              <FileRow key={file.id} file={file} gmailId={ticket.gmail_id} />
+              <FileRow
+                key={file.id}
+                file={file}
+                gmailId={ticket.gmail_id}
+                isAdmin={isAdmin}
+                onDelete={handleDeleteFile}
+              />
             ))
         ) : (
           !pendingFile && (

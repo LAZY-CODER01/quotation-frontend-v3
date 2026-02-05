@@ -1,15 +1,34 @@
 import React, { useState, useRef, useMemo } from "react";
-import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote } from "lucide-react";
+import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote, Trash2, Download } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 
 interface CPOSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
+  onFileDeleted?: () => void;
+  isAdmin?: boolean;
 }
 
 // Sub-component for individual CPO file row
-const CPORow = ({ file }: { file: QuotationFile }) => {
+const CPORow = ({
+  file,
+  isAdmin,
+  onDelete
+}: {
+  file: QuotationFile;
+  isAdmin?: boolean;
+  onDelete: (id: string) => void;
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this PO file?")) return;
+    setIsDeleting(true);
+    await onDelete(file.id);
+    setIsDeleting(false);
+  };
+
   return (
     <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
 
@@ -39,7 +58,7 @@ const CPORow = ({ file }: { file: QuotationFile }) => {
         </div>
       </div>
 
-      {/* Right Side: Badges + Link */}
+      {/* Right Side: Badges + Actions */}
       <div className="flex items-center gap-2">
 
         {/* PO Number Badge */}
@@ -56,21 +75,34 @@ const CPORow = ({ file }: { file: QuotationFile }) => {
           </div>
         )}
 
-        {/* Download Link */}
+        {/* Download Button */}
         <a
           href={file.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded border border-white/5 hover:border-white/10 transition-all"
         >
-          <ExternalLink size={14} />
+          <Download size={12} />
+          <span>Download</span>
         </a>
+
+        {/* Delete Button (Admin Only) */}
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            title="Delete File (Admin)"
+          >
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
+export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin }: CPOSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +180,20 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
     }
   };
 
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      const res = await api.delete(`/cpo/delete/${fileId}`);
+      if (res.data.success) {
+        if (onFileDeleted) onFileDeleted();
+      } else {
+        alert("Failed to delete file");
+      }
+    } catch (error) {
+      console.error("Delete error", error);
+      alert("Error deleting file");
+    }
+  };
+
   return (
     <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
 
@@ -187,17 +233,7 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
           {/* Inputs Row */}
           <div className="flex items-center gap-3">
 
-            {/* PO Number Input 
-            <div className="flex-[2] flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
-               <span className="text-[10px] font-bold text-gray-500">PO#</span>
-               <input
-                type="text"
-                value={pendingPONumber}
-                onChange={(e) => setPendingPONumber(e.target.value)}
-                placeholder="Optional"
-                className="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-600 font-mono"
-               />
-            </div> */}
+            {/* PE Number Input skipped previously */}
 
             {/* Amount Input */}
             <div className="flex-[3] flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
@@ -252,7 +288,14 @@ export default function CPOSection({ ticket, onFileAdded }: CPOSectionProps) {
         {cpoFiles.length > 0 ? (
           cpoFiles.map((file) => {
             const key = (file as any).id || (file as any)._id || file.url || file.name;
-            return <CPORow key={key} file={file} />;
+            return (
+              <CPORow
+                key={key}
+                file={file}
+                isAdmin={isAdmin}
+                onDelete={handleDeleteFile}
+              />
+            );
           })
         ) : (
           !pendingFile && (

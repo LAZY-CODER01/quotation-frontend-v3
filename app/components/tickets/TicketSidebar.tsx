@@ -418,11 +418,11 @@ export default function TicketSidebar({
           <div className="space-y-2 border-t border-white/10 pt-4">
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={onFileAdded} /></div>}
+              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={onFileAdded} onFileDeleted={onUpdate} isAdmin={isAdmin} /></div>}
             </div>
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={onCPOAdded} /></div>}
+              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={onCPOAdded} onFileDeleted={onUpdate} isAdmin={isAdmin} /></div>}
             </div>
             <div>
               <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
