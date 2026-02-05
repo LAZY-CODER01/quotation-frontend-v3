@@ -59,6 +59,15 @@ export default function TicketSidebar({
   const [noteText, setNoteText] = useState("");
   const [isSendingNote, setIsSendingNote] = useState(false);
 
+  // Edit Mode State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    subject: "",
+    senderName: "",
+    senderEmail: "",
+    receivedAt: ""
+  });
+
   const internalNotes = (ticket?.internal_notes as InternalNote[]) || [];
 
   // --- Sync State with Ticket ---
@@ -68,6 +77,24 @@ export default function TicketSidebar({
       setCurrentStatus(ticket.ticket_status || "OPEN");
       // ✅ This ensures the state matches the DB value on load
       setCurrentAssignee(ticket.assigned_to || "");
+
+      // Initialize Edit Form
+      const senderName = ticket.sender.split("<")[0].trim().replace(/"/g, "");
+      const senderEmail = ticket.sender.match(/<([^>]+)>/)?.[1] || (ticket.sender.includes("@") ? ticket.sender : "");
+
+      let parsedDate = "";
+      try {
+        parsedDate = ticket.received_at ? new Date(ticket.received_at).toISOString().slice(0, 16) : "";
+      } catch (e) {
+        console.error("Edit form date parsing error", e);
+      }
+
+      setEditForm({
+        subject: ticket.subject || "",
+        senderName: senderName,
+        senderEmail: senderEmail,
+        receivedAt: parsedDate
+      });
     }
   }, [ticket]);
 
@@ -79,6 +106,7 @@ export default function TicketSidebar({
   const getLogIcon = (action: string) => {
     switch (action) {
       case 'STATUS_CHANGE': return <RotateCw size={14} className="text-blue-400" />;
+      case 'EDIT_DETAILS': return <FileText size={14} className="text-indigo-400" />;
       case 'PRIORITY_CHANGE': return <AlertTriangle size={14} className="text-orange-400" />;
       case 'QUOTATION_UPLOAD': return <FileCheck size={14} className="text-green-400" />;
       case 'CPO_UPLOAD': return <ShoppingCart size={14} className="text-purple-400" />;
@@ -205,14 +233,8 @@ export default function TicketSidebar({
     setIsStatusOpen(false);
 
     try {
-      // Use the new RBAC endpoint
-      // Adjust endpoint if ticket_number is not available, fallback to something else or assume ticket_number exists
       const identifier = ticket.ticket_number || `TKT-${ticket.id}`;
-      // NOTE: backend expects ticket_number. If TKT-ID format is strictly used in backend ID generation, this is fine. 
-      // Ideally, the ticket object should have the exact ticket_number from DB. 
-      // Let's assume ticket.ticket_number is populated as per my read of DuckDBService code.
-
-      await api.put(`/ticket/${ticket.ticket_number}/status`, { status: newStatus });
+      await api.put(`/ticket/${identifier}/status`, { status: newStatus });
 
       if (onStatusChanged) onStatusChanged(newStatus);
       createLocalLog("STATUS_CHANGE", `Changed status to ${newStatus}`);
@@ -227,12 +249,45 @@ export default function TicketSidebar({
     }
   };
 
+  const handleSaveDetails = async () => {
+    if (!ticket) return;
+
+    try {
+      const res = await api.post('/ticket/update-details', {
+        gmail_id: ticket.gmail_id,
+        subject: editForm.subject,
+        sender_name: editForm.senderName,
+        sender_email: editForm.senderEmail,
+        received_at: editForm.receivedAt ? new Date(editForm.receivedAt).toISOString() : null
+      });
+
+      if (res.data.success) {
+        setIsEditing(false);
+        if (onUpdate) onUpdate();
+        // Create local log for immediate feedback if needed, 
+        // but backend logs generic "EDIT_DETAILS". 
+        // We can just rely on refetch from onUpdate.
+      } else {
+        alert("Failed to update details");
+      }
+    } catch (error) {
+      console.error("Update details error", error);
+      alert("Error updating details");
+    }
+  };
+
   if (!ticket || !isOpen) return null;
 
   const senderName = ticket.sender.split("<")[0].trim();
   const senderEmail = ticket.sender.match(/<([^>]+)>/)?.[1] || ticket.sender;
   const companyName = senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown";
-  const formattedDate = ticket.received_at ? format(new Date(ticket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
+  let formattedDate = "Unknown Date";
+  try {
+    formattedDate = ticket.received_at ? format(new Date(ticket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
+  } catch (e) {
+    console.error("Date parsing error", e);
+    formattedDate = "Invalid Date";
+  }
   const requirementsCount = ticket.extraction_result?.Requirements?.length || 0;
   const isUrgent = currentPriority === "URGENT";
   const statusConfig = getStatusConfig(currentStatus);
@@ -302,21 +357,76 @@ export default function TicketSidebar({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {/* <button onClick={onClose} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"><ChevronsRight size={14} /> <span>Collapse</span></button> */}
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${isEditing ? "text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20" : "text-gray-500 hover:text-white"}`}
+            >
+              {isEditing ? <CheckCircle2 size={14} /> : <FileText size={14} />}
+              {isEditing ? "Editing Info" : "Edit Info"}
+            </button>
             <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto min-h-0 p-6 space-y-8">
           <div>
-            <h2 className="text-xl font-semibold text-white mb-6 leading-snug">{ticket.subject || "No Subject"}</h2>
-            <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-              <div className="flex items-center gap-3 text-gray-400"><User size={16} /><span className="truncate">{senderName}</span></div>
-              <div className="flex items-center gap-3 text-gray-400"><Mail size={16} /><span className="truncate">{senderEmail}</span></div>
-              <div className="flex items-center gap-3 text-gray-400"><Building size={16} /><span>{companyName}</span></div>
-              <div className="flex items-center gap-3 text-gray-400"><Clock size={16} /><span>{formattedDate}</span></div>
-            </div>
+            {isEditing ? (
+              <div className="space-y-4 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Subject</label>
+                  <input
+                    type="text"
+                    value={editForm.subject}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, subject: e.target.value }))}
+                    className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Sender Name</label>
+                    <input
+                      type="text"
+                      value={editForm.senderName}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, senderName: e.target.value }))}
+                      className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Sender Email</label>
+                    <input
+                      type="text"
+                      value={editForm.senderEmail}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, senderEmail: e.target.value }))}
+                      className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Received Date</label>
+                  <input
+                    type="datetime-local"
+                    value={editForm.receivedAt}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, receivedAt: e.target.value }))}
+                    className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none [color-scheme:dark]"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-white/5 mt-2">
+                  <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                  <button onClick={handleSaveDetails} className="px-3 py-1.5 rounded bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">Save Changes</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-semibold text-white mb-6 leading-snug">{ticket.subject || "No Subject"}</h2>
+                <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+                  <div className="flex items-center gap-3 text-gray-400"><User size={16} /><span className="truncate">{senderName}</span></div>
+                  <div className="flex items-center gap-3 text-gray-400"><Mail size={16} /><span className="truncate">{senderEmail}</span></div>
+                  <div className="flex items-center gap-3 text-gray-400"><Building size={16} /><span>{companyName}</span></div>
+                  <div className="flex items-center gap-3 text-gray-400"><Clock size={16} /><span>{formattedDate}</span></div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -389,7 +499,7 @@ export default function TicketSidebar({
                 <div className="relative">
                   <select value={currentAssignee} onChange={handleAssignChange} className="w-full bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white appearance-none cursor-pointer hover:border-white/20 focus:outline-none focus:border-emerald-500/50">
                     <option value="">Unassigned</option>
-                    {allUsers.map((u: any) => <option key={u.id} value={u.username}>{u.username}</option>)}
+                    {allUsers && Array.isArray(allUsers) && allUsers.map((u: any) => <option key={u.id} value={u.username}>{u.username}</option>)}
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-3 text-gray-500 pointer-events-none" />
                 </div>
