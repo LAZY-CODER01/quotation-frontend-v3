@@ -33,12 +33,15 @@ interface TicketSidebarProps {
   onActivityLogAdded?: (log: ActivityLog) => void;
   onPriorityChanged?: (newPriority: string) => void;
   onAssignmentChanged?: (newAssignee: string) => void;
+  onFileDeleted?: (fileId: string) => void;
+  onFileUpdated?: (fileId: string, newAmount: string) => void;
 }
 
 export default function TicketSidebar({
   ticket, isOpen, onClose, onUpdate,
   onEditRequirements, onFileAdded, onCPOAdded, onNoteAdded,
-  onStatusChanged, onActivityLogAdded, onPriorityChanged, onAssignmentChanged
+  onStatusChanged, onActivityLogAdded, onPriorityChanged, onAssignmentChanged,
+  onFileDeleted, onFileUpdated
 }: TicketSidebarProps) {
 
   const { user, allUsers } = useAuth(); // ✅ Use allUsers from context
@@ -53,8 +56,13 @@ export default function TicketSidebar({
 
   const [currentAssignee, setCurrentAssignee] = useState("");
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [currentPriority, setCurrentPriority] = useState("");
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+
+  // ... (lines omitted)
+
+
   const [currentStatus, setCurrentStatus] = useState("");
   const [noteText, setNoteText] = useState("");
   const [isSendingNote, setIsSendingNote] = useState(false);
@@ -204,17 +212,28 @@ export default function TicketSidebar({
 
   const handlePriorityChange = async (newPriority: string) => {
     if (!ticket) return;
+
+    // Store old priority for revert
+    const oldPriority = currentPriority;
+
+    // Optimistic Update
     setCurrentPriority(newPriority);
     setIsPriorityOpen(false);
+    setIsUpdatingPriority(true); // Start Loading
+    if (onPriorityChanged) onPriorityChanged(newPriority); // Optimistic callback
+
     try {
       await api.post('/ticket/update-priority', { gmail_id: ticket.gmail_id, priority: newPriority });
-      if (onPriorityChanged) onPriorityChanged(newPriority);
       createLocalLog("PRIORITY_CHANGE", `Changed priority to ${newPriority}`);
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Failed to update priority", error);
-      setCurrentPriority(ticket.ticket_priority || "NORMAL");
+      // Revert on failure
+      setCurrentPriority(oldPriority);
+      if (onPriorityChanged) onPriorityChanged(oldPriority); // Revert callback
       alert("Failed to update priority");
+    } finally {
+      setIsUpdatingPriority(false); // Stop Loading
     }
   };
 
@@ -225,17 +244,18 @@ export default function TicketSidebar({
     const oldStatus = currentStatus;
     setCurrentStatus(newStatus);
     setIsStatusOpen(false);
+    if (onStatusChanged) onStatusChanged(newStatus); // Optimistic callback
 
     try {
       const identifier = ticket.ticket_number || `TKT-${ticket.id}`;
       await api.put(`/ticket/${identifier}/status`, { status: newStatus });
 
-      if (onStatusChanged) onStatusChanged(newStatus);
       createLocalLog("STATUS_CHANGE", `Changed status to ${newStatus}`);
       if (onUpdate) onUpdate();
     } catch (error: any) {
       console.error("Failed to update status", error);
       setCurrentStatus(oldStatus); // Revert
+      if (onStatusChanged) onStatusChanged(oldStatus); // Revert callback
 
       // Show specific error from backend if available
       const errMsg = error.response?.data?.error || "Failed to update status";
@@ -335,11 +355,12 @@ export default function TicketSidebar({
             <div className="pl-3 border-l border-white/10 ml-1 relative">
               <button
                 onClick={() => setIsPriorityOpen(!isPriorityOpen)}
+                disabled={isUpdatingPriority}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all ${isUrgent ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
               >
-                {isUrgent && <AlertTriangle size={10} />}
+                {isUpdatingPriority ? <Loader2 size={10} className="animate-spin" /> : (isUrgent && <AlertTriangle size={10} />)}
                 <span>{currentPriority === "URGENT" ? "Urgent" : "Normal"}</span>
-                <ChevronDown size={12} className="opacity-50" />
+                {!isUpdatingPriority && <ChevronDown size={12} className="opacity-50" />}
               </button>
               {isPriorityOpen && (
                 <div className="absolute top-full left-0 mt-1 w-32 bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
@@ -524,11 +545,11 @@ export default function TicketSidebar({
           <div className="space-y-2 border-t border-white/10 pt-4">
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={(f) => { if (onFileAdded) onFileAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={onUpdate} isAdmin={isAdmin} /></div>}
+              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={(f) => { if (onFileAdded) onFileAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); }} onFileUpdated={(id, amount) => { if (onFileUpdated) onFileUpdated(id, amount); if (onUpdate) onUpdate(); }} isAdmin={isAdmin} /></div>}
             </div>
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={(f) => { if (onCPOAdded) onCPOAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={onUpdate} isAdmin={isAdmin} /></div>}
+              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={(f) => { if (onCPOAdded) onCPOAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); }} isAdmin={isAdmin} /></div>}
             </div>
             <div>
               <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>

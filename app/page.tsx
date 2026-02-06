@@ -14,8 +14,10 @@ import { FilterState, INITIAL_FILTERS } from "./../types/filters";
 import { EmailExtraction, ExtractionRequirement, QuotationFile, ActivityLog } from "../types/email";
 import DateRangeModal from "./components/modals/DateRangeModal";
 import NewTicketModal from "./components/modals/NewTicketModal";
-
+import { useQueryClient, InfiniteData } from "@tanstack/react-query";
+import { useInfiniteTickets } from "../hooks/useTickets";
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [loadMoreTrigger, setLoadMoreTrigger] = useState(0);
@@ -37,9 +39,39 @@ export default function DashboardPage() {
 
   // --- Handlers ---
 
+  // Helper to update infinite query cache
+  const updateTicketInCache = (updater: (ticket: EmailExtraction) => EmailExtraction) => {
+    if (!selectedTicket) return;
+    const queryKey = ["tickets", "infinite", 10]; // Matches default days=10
+
+    queryClient.setQueryData<InfiniteData<EmailExtraction[]>>(queryKey, (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map(page =>
+          page.map(ticket =>
+            (ticket.id === selectedTicket.id || ticket.gmail_id === selectedTicket.gmail_id)
+              ? updater(ticket)
+              : ticket
+          )
+        )
+      };
+    });
+
+  };
+
   const handlePriorityChanged = (newPriority: string) => {
     if (!selectedTicket) return;
-    setSelectedTicket(prev => prev ? ({ ...prev, ticket_priority: newPriority }) : null);
+    const updated = { ...selectedTicket, ticket_priority: newPriority };
+    setSelectedTicket(updated);
+    updateTicketInCache(t => ({ ...t, ticket_priority: newPriority }));
+  };
+
+  const handleStatusChanged = (newStatus: string) => {
+    if (!selectedTicket) return;
+    const updated = { ...selectedTicket, ticket_status: newStatus };
+    setSelectedTicket(updated);
+    updateTicketInCache(t => ({ ...t, ticket_status: newStatus }));
   };
 
   const handleActivityLogAdded = (newLog: ActivityLog) => {
@@ -49,12 +81,8 @@ export default function DashboardPage() {
       const updatedLogs = [...(prev.activity_logs || []), newLog];
       return { ...prev, activity_logs: updatedLogs };
     });
-  };
-
-  const handleStatusChanged = (newStatus: string) => {
-    if (!selectedTicket) return;
-    const updatedTicket = { ...selectedTicket, ticket_status: newStatus };
-    setSelectedTicket(updatedTicket);
+    // Activity logs don't show on card typically, so cache update optional but good for consistency
+    updateTicketInCache(t => ({ ...t, activity_logs: [...(t.activity_logs || []), newLog] }));
   };
 
   const handleOpenEditor = () => {
@@ -80,18 +108,63 @@ export default function DashboardPage() {
 
   const handleFileAdded = (newFile: QuotationFile) => {
     if (!selectedTicket) return;
-    setSelectedTicket(prev => prev ? ({
-      ...prev,
-      quotation_files: [...(prev.quotation_files || []), newFile]
-    }) : null);
+    const updatedQuotations = [...(selectedTicket.quotation_files || []), newFile];
+    // ✅ Optimistic Status Update: Set to SENT
+    const updatedTicket = {
+      ...selectedTicket,
+      quotation_files: updatedQuotations,
+      ticket_status: 'SENT'
+    };
+    setSelectedTicket(updatedTicket);
+    updateTicketInCache(t => ({
+      ...t,
+      quotation_files: [...(t.quotation_files || []), newFile],
+      ticket_status: 'SENT'
+    }));
   };
 
   const handleCPOAdded = (newFile: QuotationFile) => {
     if (!selectedTicket) return;
-    setSelectedTicket(prev => prev ? ({
-      ...prev,
-      cpo_files: [...(prev.cpo_files || []), newFile]
-    }) : null);
+    const updatedCPOs = [...(selectedTicket.cpo_files || []), newFile];
+    // ✅ Optimistic Status Update: Set to ORDER_CONFIRMED
+    const updatedTicket = {
+      ...selectedTicket,
+      cpo_files: updatedCPOs,
+      ticket_status: 'ORDER_CONFIRMED'
+    };
+    setSelectedTicket(updatedTicket);
+    updateTicketInCache(t => ({
+      ...t,
+      cpo_files: [...(t.cpo_files || []), newFile],
+      ticket_status: 'ORDER_CONFIRMED'
+    }));
+  };
+
+  const handleFileDeleted = (fileId: string) => {
+    if (!selectedTicket) return;
+    // Attempt to remove from both arrays as we don't know type easily here without iterating
+    const updateFiles = (t: EmailExtraction) => ({
+      ...t,
+      quotation_files: t.quotation_files?.filter(f => f.id !== fileId) || [],
+      cpo_files: t.cpo_files?.filter(f => f.id !== fileId) || []
+    });
+
+    setSelectedTicket(prev => prev ? updateFiles(prev) : null);
+    updateTicketInCache(updateFiles);
+  };
+
+  const handleFileUpdated = (fileId: string, newAmount: string) => {
+    if (!selectedTicket) return;
+    const updateFiles = (t: EmailExtraction) => {
+      const update = (f: QuotationFile) => f.id === fileId ? { ...f, amount: newAmount } : f;
+      return {
+        ...t,
+        quotation_files: t.quotation_files?.map(update) || [],
+        cpo_files: t.cpo_files?.map(update) || []
+      };
+    };
+    setSelectedTicket(prev => prev ? updateFiles(prev) : null);
+    updateTicketInCache(updateFiles);
   };
 
   const handleRequirementsSaved = (newReqs: ExtractionRequirement[]) => {
@@ -199,6 +272,9 @@ export default function DashboardPage() {
             onStatusChanged={handleStatusChanged}
             onActivityLogAdded={handleActivityLogAdded}
             onPriorityChanged={handlePriorityChanged}
+            onFileDeleted={handleFileDeleted}
+            onFileUpdated={handleFileUpdated}
+            onUpdate={() => queryClient.invalidateQueries({ queryKey: ["tickets"] })}
           />
         </div>
       )}

@@ -6,7 +6,7 @@ import api from "../../../lib/api";
 interface CPOSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
-  onFileDeleted?: () => void;
+  onFileDeleted?: (fileId: string) => void;
   isAdmin?: boolean;
 }
 
@@ -111,9 +111,16 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
   const [pendingPONumber, setPendingPONumber] = useState("");
   const [pendingAmount, setPendingAmount] = useState("");
 
+  // Local State for Optimistic Updates
+  const [localFiles, setLocalFiles] = useState<QuotationFile[]>([]);
+
   // 1. Sanitize + Deduplicate files + Sort (Newest First)
-  const cpoFiles: QuotationFile[] = useMemo(() => {
-    if (!Array.isArray(ticket.cpo_files)) return [];
+  // Sync local state when ticket changes
+  React.useEffect(() => {
+    if (!Array.isArray(ticket.cpo_files)) {
+      setLocalFiles([]);
+      return;
+    }
 
     const map = new Map<string, QuotationFile>();
     for (const file of ticket.cpo_files) {
@@ -123,11 +130,13 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
       map.set(key, file);
     }
 
-    return Array.from(map.values()).sort((a, b) => {
+    const sorted = Array.from(map.values()).sort((a, b) => {
       const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
       const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
       return dateB - dateA;
     });
+
+    setLocalFiles(sorted);
   }, [ticket.cpo_files]);
 
   // 2. Handle File Selection
@@ -163,33 +172,64 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
     formData.append("amount", pendingAmount);
 
     setUploading(true);
+
+    // Optimistic Add
+    const tempId = `temp-${Date.now()}`;
+    const tempFile: QuotationFile = {
+      id: tempId,
+      name: pendingFile.name,
+      url: "#",
+      uploaded_at: new Date().toISOString(),
+      reference_id: "PENDING",
+      amount: pendingAmount,
+      po_number: pendingPONumber
+    };
+    setLocalFiles(prev => [tempFile, ...prev]);
+    if (onFileAdded) onFileAdded(tempFile);
+    handleCancel(); // Clear staging area
+
     try {
       const response = await api.post("/ticket/upload-cpo", formData);
 
       if (response.data?.success && response.data?.file) {
-        if (onFileAdded) onFileAdded(response.data.file);
-        handleCancel(); // Clear staging area
+        const newFile = response.data.file;
+        setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
+        // We relied on temp file for initial display.
       } else {
         alert(response.data?.message || "Upload failed");
+        // Revert
+        setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+        if (onFileDeleted) onFileDeleted(tempId);
       }
     } catch (error) {
       console.error("Upload error", error);
       alert("Upload error");
+      // Revert
+      setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+      if (onFileDeleted) onFileDeleted(tempId);
     } finally {
       setUploading(false);
     }
   };
 
   const handleDeleteFile = async (fileId: string) => {
+    // Optimistic Delete
+    const oldFiles = localFiles;
+    setLocalFiles(prev => prev.filter(f => f.id !== fileId));
+    if (onFileDeleted) onFileDeleted(fileId); // Optimistic callback
+
     try {
       const res = await api.delete(`/cpo/delete/${fileId}`);
-      if (res.data.success) {
-        if (onFileDeleted) onFileDeleted();
-      } else {
+      if (!res.data.success) {
+        // Revert
+        setLocalFiles(oldFiles);
+        // Parent revert would need re-adding logic
         alert("Failed to delete file");
       }
     } catch (error) {
       console.error("Delete error", error);
+      // Revert
+      setLocalFiles(oldFiles);
       alert("Error deleting file");
     }
   };
@@ -202,7 +242,7 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-semibold text-white">Purchase Orders</h3>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-            {cpoFiles.length} Files
+            {localFiles.length} Files
           </span>
         </div>
       </div>
@@ -285,8 +325,8 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
 
       {/* --- Existing Files List --- */}
       <div className="space-y-2">
-        {cpoFiles.length > 0 ? (
-          cpoFiles.map((file) => {
+        {localFiles.length > 0 ? (
+          localFiles.map((file) => {
             const key = (file as any).id || (file as any)._id || file.url || file.name;
             return (
               <CPORow

@@ -6,7 +6,8 @@ import api from "../../../lib/api";
 interface QuotationSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
-  onFileDeleted?: () => void;
+  onFileDeleted?: (fileId: string) => void;
+  onFileUpdated?: (fileId: string, newAmount: string) => void;
   isAdmin?: boolean;
 }
 
@@ -15,12 +16,14 @@ const FileRow = ({
   file,
   gmailId,
   isAdmin,
-  onDelete
+  onDelete,
+  onFileUpdated
 }: {
   file: QuotationFile;
   gmailId: string;
   isAdmin?: boolean;
   onDelete: (fileId: string) => void;
+  onFileUpdated?: (fileId: string, newAmount: string) => void;
 }) => {
   const [amount, setAmount] = useState(file.amount || "");
   const [isSaving, setIsSaving] = useState(false);
@@ -29,14 +32,23 @@ const FileRow = ({
   const handleSave = async () => {
     if (amount === file.amount) return;
     setIsSaving(true);
+    setIsSaving(true);
+    // Optimistic update callback
+    if (onFileUpdated) onFileUpdated(file.id, amount);
+
     try {
-      await api.post("/ticket/update-file-amount", {
+      const res = await api.post("/ticket/update-file-amount", {
         gmail_id: gmailId,
         file_id: file.id,
         amount: amount
       });
+      // if (res.data.success) {} // Already handled optimistically
     } catch (error) {
       console.error("Failed to update amount", error);
+      // Revert if needed? Ideally parent handles revert or we just alert.
+      // For amount, it's tricky to revert parent without old amount.
+      // But since we didn't pass old amount to valid request, effectively we stay consistent eventually via refetch.
+      // But to be safe, we could pass old/new.
     } finally {
       setIsSaving(false);
     }
@@ -124,13 +136,21 @@ const FileRow = ({
   );
 };
 
-export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, isAdmin }: QuotationSectionProps) {
+export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, onFileUpdated, isAdmin }: QuotationSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingAmount, setPendingAmount] = useState("");
+
+  // Local state for optimistic updates
+  const [localFiles, setLocalFiles] = useState<QuotationFile[]>(ticket.quotation_files || []);
+
+  // Sync with ticket prop when it changes (re-fetch)
+  React.useEffect(() => {
+    setLocalFiles(ticket.quotation_files || []);
+  }, [ticket.quotation_files]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,39 +180,76 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, i
     formData.append("amount", pendingAmount);
 
     setUploading(true);
+    setUploading(true);
+
+    // Optimistic Add
+    const tempId = `temp-${Date.now()}`;
+    const tempFile: QuotationFile = {
+      id: tempId,
+      name: pendingFile.name,
+      url: "#",
+      uploaded_at: new Date().toISOString(),
+      reference_id: "PENDING",
+      amount: pendingAmount
+    };
+    setLocalFiles(prev => [...prev, tempFile]);
+    if (onFileAdded) onFileAdded(tempFile);
+    handleCancel();
+
     try {
       const response = await api.post("/ticket/upload-quotation", formData, {
         headers: { "Content-Type": undefined },
       });
 
       if (response.data.success && response.data.file) {
-        if (onFileAdded) {
-          onFileAdded(response.data.file);
-        }
-        handleCancel();
+        // Replace temp file with real one (mostly happens via onUpdate refetch, but local state update handles it too)
+        const newFile = response.data.file;
+        setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
+        // We triggered onFileAdded with temp, now we technically have real ID.
+        // relying on onUpdate() from Sidebar to refresh the board helps.
       } else {
         alert("Upload failed: " + (response.data.message || "Unknown error"));
+        // Revert
+        setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+        if (onFileDeleted) onFileDeleted(tempId); // Hack to remove from parent cache
       }
     } catch (error) {
       console.error("Upload error", error);
       alert("Upload error");
+      // Revert
+      setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+      if (onFileDeleted) onFileDeleted(tempId);
     } finally {
       setUploading(false);
     }
   };
 
   const handleDeleteFile = async (fileId: string) => {
+    // Optimistic Delete
+    const oldFiles = localFiles;
+    setLocalFiles(prev => prev.filter(f => f.id !== fileId));
+    if (onFileDeleted) onFileDeleted(fileId); // Optimistic callback
+
     try {
       const res = await api.delete(`/quotation/delete/${fileId}`);
-      if (res.data.success) {
-        if (onFileDeleted) onFileDeleted();
-      } else {
+      if (!res.data.success) {
+        // Revert
+        setLocalFiles(oldFiles);
+        // We can't easily "undelete" in parent without re-adding.
+        // But onUpdate will refetch eventually.
         alert("Failed to delete file");
       }
     } catch (error) {
       console.error("Delete error", error);
+      // Revert
+      setLocalFiles(oldFiles);
       alert("Error deleting file");
     }
+  };
+
+  const handleFileUpdatedLocally = (fileId: string, newAmount: string) => {
+    setLocalFiles(prev => prev.map(f => f.id === fileId ? { ...f, amount: newAmount } : f));
+    if (onFileUpdated) onFileUpdated(fileId, newAmount);
   };
 
   return (
@@ -276,9 +333,9 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, i
 
       {/* --- Existing Files List (Sorted by Newest First) --- */}
       <div className="space-y-2">
-        {ticket.quotation_files && ticket.quotation_files.length > 0 ? (
+        {localFiles && localFiles.length > 0 ? (
           // ✅ SORTING APPLIED HERE
-          [...ticket.quotation_files]
+          [...localFiles]
             .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
             .map((file) => (
               <FileRow
@@ -287,6 +344,7 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, i
                 gmailId={ticket.gmail_id}
                 isAdmin={isAdmin}
                 onDelete={handleDeleteFile}
+                onFileUpdated={handleFileUpdatedLocally}
               />
             ))
         ) : (
