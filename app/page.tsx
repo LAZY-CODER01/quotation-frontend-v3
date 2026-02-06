@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Filter } from "lucide-react";
+import { Filter, Plus } from "lucide-react";
 
 // Components
 import TicketsBoard from "./components/tickets/TicketBoard";
@@ -13,6 +13,7 @@ import { Clock, Loader2 } from "lucide-react";
 import { FilterState, INITIAL_FILTERS } from "./../types/filters";
 import { EmailExtraction, ExtractionRequirement, QuotationFile, ActivityLog } from "../types/email";
 import DateRangeModal from "./components/modals/DateRangeModal";
+import NewTicketModal from "./components/modals/NewTicketModal";
 
 export default function DashboardPage() {
   const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
@@ -21,6 +22,7 @@ export default function DashboardPage() {
 
   // ✅ NEW: Date Range Modal State
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
 
   const handleLoadMore = () => {
     setLoadingOlder(true);
@@ -122,6 +124,12 @@ export default function DashboardPage() {
         onClose={() => setIsDateModalOpen(false)}
       />
 
+      {/* ✅ NEW: Create Ticket Modal */}
+      <NewTicketModal
+        isOpen={isNewTicketModalOpen}
+        onClose={() => setIsNewTicketModalOpen(false)}
+      />
+
       {isEditorOpen && selectedTicket ? (
         <RequirementsEditor
           ticket={selectedTicket}
@@ -131,32 +139,41 @@ export default function DashboardPage() {
       ) : (
         <div className="flex flex-col h-full"> {/* Changed to flex-col to stack Header + Board */}
 
-          {/* Header Bar with Filter Button */}
           <div className="flex-none px-6 pt-6 pb-2 flex justify-between items-center bg-black">
             <h1 className="text-xl font-bold text-white">Tickets</h1>
 
-            {/* ✅ FIXED: "Load Older" opens Modal */}
-            <button
-              onClick={() => setIsDateModalOpen(true)}
-              className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
-            >
-              <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
-              {"Load Older"}
-            </button>
+            <div className="flex items-center gap-3">
+              {/* ✅ FIXED: "Load Older" opens Modal */}
+              <button
+                onClick={() => setIsDateModalOpen(true)}
+                className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
+              >
+                <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
+                {"Load Older"}
+              </button>
 
-            <button
-              onClick={() => setIsFilterOpen(true)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border
-                ${isFilterOpen || JSON.stringify(filters) !== JSON.stringify(INITIAL_FILTERS)
-                  ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
-                  : 'bg-[rgb(var(--panel))] border-[rgb(var(--border))] text-gray-300 hover:text-white hover:border-emerald-500'
-                }
-              `}
-            >
-              <Filter size={16} />
-              Filters
-            </button>
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border
+                  ${isFilterOpen || JSON.stringify(filters) !== JSON.stringify(INITIAL_FILTERS)
+                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
+                    : 'bg-[rgb(var(--panel))] border-[rgb(var(--border))] text-gray-300 hover:text-white hover:border-emerald-500'
+                  }
+                `}
+              >
+                <Filter size={16} />
+                Filters
+              </button>
+
+              <button
+                onClick={() => setIsNewTicketModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              >
+                <Plus size={16} />
+                New Ticket
+              </button>
+            </div>
           </div>
 
           {/* Main Board Area */}

@@ -1,4 +1,4 @@
-import { useQuery, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
 import { EmailExtraction } from "../types/email";
 
@@ -66,5 +66,32 @@ export function useInfiniteTickets(
         staleTime: 30000,
         // Add polling support
         refetchInterval: options.refetchInterval ?? 30000,
+    });
+}
+
+// --- Hook for Create Ticket ---
+interface CreateTicketDTO {
+    subject: string;
+    description?: string; // Optional or removed, but keeping as optional for backward compat if needed, though plan said remove. Let's remove to be clean.
+    company_name: string;
+    sender_name: string;
+    sender_email: string;
+    priority: "NORMAL" | "URGENT";
+}
+
+export function useCreateTicket() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (ticketData: CreateTicketDTO) => {
+            const response = await api.post("/emails", ticketData);
+            if (!response.data.success) {
+                throw new Error(response.data.message || "Failed to create ticket");
+            }
+            return response.data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["tickets"] });
+        },
     });
 }

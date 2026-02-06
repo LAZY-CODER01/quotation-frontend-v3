@@ -563,11 +563,11 @@ export default function TicketSidebar({
         </div>
 
         {/* Footer Close Button */}
-        <div className="p-4 border-t border-white/10 bg-[#0F1115] flex justify-end">
+        {/* <div className="p-4 border-t border-white/10 bg-[#0F1115] flex justify-end">
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-gray-400 hover:text-white font-medium transition-colors flex items-center justify-center gap-2">
             <X size={14} /> Close
           </button>
-        </div>
+        </div> */}
       </div>
     </>
   );
