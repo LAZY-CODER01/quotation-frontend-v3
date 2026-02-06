@@ -47,7 +47,7 @@ export default function RootLayout({
                 <TopBar />
 
                 {/* 3. Main Content Area: Passes the remaining space to the page */}
-                <main className="flex-1 overflow-hidden bg-[hsl(var(--bg))]">
+                <main className="flex-1 overflow-y-auto bg-[hsl(var(--bg))]">
                   {children}
                 </main>
               </div>
