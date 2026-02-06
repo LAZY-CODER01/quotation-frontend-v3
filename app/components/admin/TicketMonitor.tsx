@@ -43,6 +43,7 @@ export default function TicketMonitor() {
             };
         }
 
+
         // Case 2: Sent / Inbox / Others -> Show Quotation Amount (Green)
         if (!t.quotation_files || t.quotation_files.length === 0) return null;
 
@@ -55,7 +56,7 @@ export default function TicketMonitor() {
             type: 'QUOTE'
         };
     };
-
+    console.log("Rendering TicketMonitor with tickets:", tickets);
     // Helper to format date
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -69,10 +70,10 @@ export default function TicketMonitor() {
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'SENT': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-            case 'ORDER_CONFIRMED': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+            case 'ORDER_CONFIRMED': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
             case 'ORDER_COMPLETED': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
             case 'COMPLETION_REQUESTED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-            case 'CLOSED': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+            case 'CLOSED': return 'bg-red-500/10 text-red-500 border-red-500/20';
             default: return 'bg-blue-400/10 text-blue-400 border-blue-400/20'; // Inbox / Default
         }
     };
@@ -167,7 +168,7 @@ export default function TicketMonitor() {
                                     <td className="px-4 py-3 text-center text-gray-500">
                                         <div className="flex items-center justify-center gap-1 group-hover:text-white transition-colors">
                                             <Eye size={14} />
-                                            <span className="text-[10px]">({t.activity_logs?.length || 0})</span>
+                                            <span className="text-[10px]">({t.extraction_result.Requirements?.length || 0})</span>
                                         </div>
                                     </td>
 

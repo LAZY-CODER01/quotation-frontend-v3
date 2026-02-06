@@ -98,7 +98,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
       <TicketColumn
         title="Order Confirmed"
         count={getCol(['ORDER_CONFIRMED']).length}
-        color="emerald"
+        color="purple"
         tickets={getCol(['ORDER_CONFIRMED'])}
         onTicketClick={onTicketClick}
         slug="confirmed"
@@ -116,7 +116,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
       <TicketColumn
         title="Closed"
         count={getCol(['CLOSED']).length}
-        color="blue"
+        color="red"
         tickets={getCol(['CLOSED'])}
         onTicketClick={onTicketClick}
         slug="closed"

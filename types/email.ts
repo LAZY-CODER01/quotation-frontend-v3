@@ -45,6 +45,7 @@ export interface EmailExtraction {
   quotation_amount?: string;
 
   sender: string;
+  company_name?: string;
   subject: string;
   received_at: string;
   body_text: string;

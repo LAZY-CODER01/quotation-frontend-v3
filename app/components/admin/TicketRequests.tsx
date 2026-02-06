@@ -39,8 +39,9 @@ export default function TicketRequests() {
     }, [completionRequests, selectedTicket]);
 
     return (
-        <div className="bg-[#181A1F] rounded-xl border border-white/10 p-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-[#181A1F] rounded-xl border border-white/10 overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+            {/* Header - Fixed */}
+            <div className="p-6 border-b border-white/10 bg-[#181A1F] flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-orange-500/10 rounded-lg">
                         <RotateCw className="w-6 h-6 text-orange-500" />
@@ -55,7 +56,8 @@ export default function TicketRequests() {
                 </button>
             </div>
 
-            <div className="space-y-3">
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto flex-1 p-6 space-y-3">
                 {loadingRequests ? (
                     <div className="flex justify-center py-4"><Loader2 className="animate-spin text-gray-500" /></div>
                 ) : completionRequests.length > 0 ? (

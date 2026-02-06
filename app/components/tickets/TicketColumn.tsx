@@ -8,7 +8,7 @@ import { format, isToday, isYesterday } from "date-fns";
 interface TicketColumnProps {
   title: string;
   count: number;
-  color: "blue" | "green" | "yellow" | "emerald";
+  color: "blue" | "green" | "yellow" | "emerald" | "purple" | "red";
   date?: string; // Keep this if it's for the column header itself
   tickets: EmailExtraction[];
   onTicketClick?: (ticket: EmailExtraction) => void;
@@ -20,6 +20,8 @@ const colorMap = {
   green: "bg-green-500",
   yellow: "bg-yellow-500",
   emerald: "bg-emerald-500",
+  purple: "bg-purple-500",
+  red: "bg-red-500",
 };
 
 export default function TicketColumn({

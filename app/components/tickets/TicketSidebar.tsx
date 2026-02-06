@@ -65,7 +65,7 @@ export default function TicketSidebar({
     subject: "",
     senderName: "",
     senderEmail: "",
-    receivedAt: ""
+    companyName: ""
   });
 
   const internalNotes = (ticket?.internal_notes as InternalNote[]) || [];
@@ -81,19 +81,13 @@ export default function TicketSidebar({
       // Initialize Edit Form
       const senderName = ticket.sender.split("<")[0].trim().replace(/"/g, "");
       const senderEmail = ticket.sender.match(/<([^>]+)>/)?.[1] || (ticket.sender.includes("@") ? ticket.sender : "");
-
-      let parsedDate = "";
-      try {
-        parsedDate = ticket.received_at ? new Date(ticket.received_at).toISOString().slice(0, 16) : "";
-      } catch (e) {
-        console.error("Edit form date parsing error", e);
-      }
+      const companyName = ticket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "");
 
       setEditForm({
         subject: ticket.subject || "",
         senderName: senderName,
         senderEmail: senderEmail,
-        receivedAt: parsedDate
+        companyName: companyName
       });
     }
   }, [ticket]);
@@ -200,10 +194,10 @@ export default function TicketSidebar({
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'SENT': return { label: 'Sent', color: 'bg-blue-500', icon: <Send size={14} /> };
-      case 'ORDER_CONFIRMED': return { label: 'Order Confirmed', color: 'bg-yellow-500', icon: <ShoppingBag size={14} /> };
+      case 'ORDER_CONFIRMED': return { label: 'Order Confirmed', color: 'bg-purple-500', icon: <ShoppingBag size={14} /> };
       case 'ORDER_COMPLETED': return { label: 'Order Completed', color: 'bg-emerald-500', icon: <Truck size={14} /> };
       case 'COMPLETION_REQUESTED': return { label: 'Completion Requested', color: 'bg-orange-500', icon: <AlertTriangle size={14} /> };
-      case 'CLOSED': return { label: 'Closed', color: 'bg-gray-500', icon: <XCircle size={14} /> };
+      case 'CLOSED': return { label: 'Closed', color: 'bg-red-500', icon: <XCircle size={14} /> };
       default: return { label: 'Inbox', color: 'bg-indigo-500', icon: <CheckCircle2 size={14} /> };
     }
   };
@@ -253,17 +247,18 @@ export default function TicketSidebar({
     if (!ticket) return;
 
     try {
-      const res = await api.post('/ticket/update-details', {
+      const payload = {
         gmail_id: ticket.gmail_id,
         subject: editForm.subject,
         sender_name: editForm.senderName,
         sender_email: editForm.senderEmail,
-        received_at: editForm.receivedAt ? new Date(editForm.receivedAt).toISOString() : null
-      });
+        company_name: editForm.companyName
+      };
 
+      const res = await api.post('/ticket/update-details', payload);
       if (res.data.success) {
-        setIsEditing(false);
         if (onUpdate) onUpdate();
+        setIsEditing(false);
         // Create local log for immediate feedback if needed, 
         // but backend logs generic "EDIT_DETAILS". 
         // We can just rely on refetch from onUpdate.
@@ -280,7 +275,7 @@ export default function TicketSidebar({
 
   const senderName = ticket.sender.split("<")[0].trim();
   const senderEmail = ticket.sender.match(/<([^>]+)>/)?.[1] || ticket.sender;
-  const companyName = senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown";
+  const companyName = ticket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
   let formattedDate = "Unknown Date";
   try {
     formattedDate = ticket.received_at ? format(new Date(ticket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
@@ -403,12 +398,13 @@ export default function TicketSidebar({
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Received Date</label>
+                  <label className="text-xs text-gray-500 mb-1 block">Company Name</label>
                   <input
-                    type="datetime-local"
-                    value={editForm.receivedAt}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, receivedAt: e.target.value }))}
-                    className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none [color-scheme:dark]"
+                    type="text"
+                    value={editForm.companyName}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, companyName: e.target.value }))}
+                    className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none"
+                    placeholder="Enter company name"
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-2 border-t border-white/5 mt-2">
@@ -451,7 +447,7 @@ export default function TicketSidebar({
               {isStatusOpen && isAdmin && (
                 <div className="absolute top-full left-0 mt-1 w-full bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
                   <div className="p-1 space-y-0.5">
-                    {[{ val: 'OPEN', label: 'Inbox', col: 'bg-indigo-500' }, { val: 'SENT', label: 'Sent', col: 'bg-blue-500' }, { val: 'ORDER_CONFIRMED', label: 'Order Confirmed', col: 'bg-yellow-500' }, { val: 'ORDER_COMPLETED', label: 'Order Completed', col: 'bg-emerald-500' }, { val: 'CLOSED', label: 'Closed', col: 'bg-gray-500' }].map((opt) => (
+                    {[{ val: 'OPEN', label: 'Inbox', col: 'bg-indigo-500' }, { val: 'SENT', label: 'Sent', col: 'bg-blue-500' }, { val: 'ORDER_CONFIRMED', label: 'Order Confirmed', col: 'bg-purple-500' }, { val: 'ORDER_COMPLETED', label: 'Order Completed', col: 'bg-emerald-500' }, { val: 'CLOSED', label: 'Closed', col: 'bg-red-500' }].map((opt) => (
                       <button key={opt.val} onClick={() => handleStatusChange(opt.val)} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"><div className={`w-1.5 h-1.5 rounded-full ${opt.col}`} /> {opt.label}</button>
                     ))}
                   </div>
@@ -564,6 +560,13 @@ export default function TicketSidebar({
               )}
             </div>
           </div>
+        </div>
+
+        {/* Footer Close Button */}
+        <div className="p-4 border-t border-white/10 bg-[#0F1115] flex justify-end">
+          <button onClick={onClose} className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-gray-400 hover:text-white font-medium transition-colors flex items-center justify-center gap-2">
+            <X size={14} /> Close
+          </button>
         </div>
       </div>
     </>
