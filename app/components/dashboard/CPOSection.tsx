@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote, Trash2, Download } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
-
+import { useUpload } from "../../../context/UploadContext"; // ✅ Custom Hook
 interface CPOSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
@@ -105,6 +105,7 @@ const CPORow = ({
 export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin }: CPOSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingFilesRef = useRef<Set<string>>(new Set());
 
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -116,27 +117,31 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
 
   // 1. Sanitize + Deduplicate files + Sort (Newest First)
   // Sync local state when ticket changes
+  // 1. Sanitize + Deduplicate files + Sort (Newest First)
+  // Sync local state when ticket changes
   React.useEffect(() => {
-    if (!Array.isArray(ticket.cpo_files)) {
-      setLocalFiles([]);
-      return;
+    let serverFiles: QuotationFile[] = [];
+    if (Array.isArray(ticket.cpo_files)) {
+      const map = new Map<string, QuotationFile>();
+      for (const file of ticket.cpo_files) {
+        if (!file) continue;
+        const key = (file as any).id || (file as any)._id || file.url || file.name;
+        if (!key) continue;
+        map.set(key, file);
+      }
+      serverFiles = Array.from(map.values()).sort((a, b) => {
+        const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
+        const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
+        return dateB - dateA;
+      });
     }
 
-    const map = new Map<string, QuotationFile>();
-    for (const file of ticket.cpo_files) {
-      if (!file) continue;
-      const key = (file as any).id || (file as any)._id || file.url || file.name;
-      if (!key) continue;
-      map.set(key, file);
-    }
-
-    const sorted = Array.from(map.values()).sort((a, b) => {
-      const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
-      const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
-      return dateB - dateA;
+    setLocalFiles(prev => {
+      // Keep pending files that are still uploading
+      const pending = prev.filter(f => pendingFilesRef.current.has(f.id));
+      // Merge: Pending first (as they are newest), then server files
+      return [...pending, ...serverFiles];
     });
-
-    setLocalFiles(sorted);
   }, [ticket.cpo_files]);
 
   // 2. Handle File Selection
@@ -155,6 +160,15 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
     setPendingAmount("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  // 3. Handle Upload Confirmation
+
+
+  // ... (existing imports, but wait replace content replaces block)
+
+  // Re-using the logic from QuotationSection for consistency.
+
+  const { uploadFile } = useUpload(); // ✅ Global Context
 
   // 3. Handle Upload Confirmation
   const handleUpload = async () => {
@@ -184,32 +198,44 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
       amount: pendingAmount,
       po_number: pendingPONumber
     };
+
+    pendingFilesRef.current.add(tempId);
     setLocalFiles(prev => [tempFile, ...prev]);
-    if (onFileAdded) onFileAdded(tempFile);
-    handleCancel(); // Clear staging area
+    // Note: Delaying onFileAdded until success to prevent premature re-fetch
 
-    try {
-      const response = await api.post("/ticket/upload-cpo", formData);
+    // Clear staging area immediately
+    handleCancel();
 
-      if (response.data?.success && response.data?.file) {
-        const newFile = response.data.file;
-        setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
-        // We relied on temp file for initial display.
-      } else {
-        alert(response.data?.message || "Upload failed");
-        // Revert
-        setLocalFiles(prev => prev.filter(f => f.id !== tempId));
-        if (onFileDeleted) onFileDeleted(tempId);
+    // Context Upload
+    await uploadFile({
+      url: "/ticket/upload-cpo",
+      formData: formData,
+      onSuccess: (data) => {
+        pendingFilesRef.current.delete(tempId);
+
+        if (data?.success && data?.file) {
+          const newFile = data.file;
+          setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
+          if (onFileAdded) onFileAdded(newFile);
+        } else {
+          alert(data?.message || "Upload failed");
+          revertOptimistic(tempId);
+        }
+        setUploading(false);
+      },
+      onError: (err) => {
+        pendingFilesRef.current.delete(tempId);
+        console.error("Upload error", err);
+        alert("Upload error");
+        revertOptimistic(tempId);
+        setUploading(false);
       }
-    } catch (error) {
-      console.error("Upload error", error);
-      alert("Upload error");
-      // Revert
-      setLocalFiles(prev => prev.filter(f => f.id !== tempId));
-      if (onFileDeleted) onFileDeleted(tempId);
-    } finally {
-      setUploading(false);
-    }
+    });
+  };
+
+  const revertOptimistic = (tempId: string) => {
+    setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+    if (onFileDeleted) onFileDeleted(tempId);
   };
 
   const handleDeleteFile = async (fileId: string) => {

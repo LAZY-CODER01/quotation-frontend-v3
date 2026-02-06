@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { Upload, FileText, Loader2, ExternalLink, X, Check, Trash2, Download } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
+import { useUpload } from "../../../context/UploadContext"; // ✅ Import hook
 
 interface QuotationSectionProps {
   ticket: EmailExtraction;
@@ -139,6 +140,7 @@ const FileRow = ({
 export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, onFileUpdated, isAdmin }: QuotationSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingFilesRef = useRef<Set<string>>(new Set());
 
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -148,8 +150,17 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
   const [localFiles, setLocalFiles] = useState<QuotationFile[]>(ticket.quotation_files || []);
 
   // Sync with ticket prop when it changes (re-fetch)
+  // Sync with ticket prop when it changes (re-fetch)
   React.useEffect(() => {
-    setLocalFiles(ticket.quotation_files || []);
+    let serverFiles: QuotationFile[] = [];
+    if (Array.isArray(ticket.quotation_files)) {
+      serverFiles = ticket.quotation_files;
+    }
+
+    setLocalFiles(prev => {
+      const pending = prev.filter(f => pendingFilesRef.current.has(f.id));
+      return [...pending, ...serverFiles];
+    });
   }, [ticket.quotation_files]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,6 +177,8 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const { uploadFile } = useUpload(); // ✅ Global Context
+
   const handleUpload = async () => {
     if (!pendingFile) return;
 
@@ -180,7 +193,6 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
     formData.append("amount", pendingAmount);
 
     setUploading(true);
-    setUploading(true);
 
     // Optimistic Add
     const tempId = `temp-${Date.now()}`;
@@ -192,36 +204,44 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
       reference_id: "PENDING",
       amount: pendingAmount
     };
+
+    pendingFilesRef.current.add(tempId);
     setLocalFiles(prev => [...prev, tempFile]);
-    if (onFileAdded) onFileAdded(tempFile);
+    // Note: Delaying onFileAdded until success
+
+    // Clear form immediately
     handleCancel();
 
-    try {
-      const response = await api.post("/ticket/upload-quotation", formData, {
-        headers: { "Content-Type": undefined },
-      });
+    // Trigger Background Upload via Context
+    await uploadFile({
+      url: "/ticket/upload-quotation",
+      formData: formData,
+      onSuccess: (data) => {
+        pendingFilesRef.current.delete(tempId);
 
-      if (response.data.success && response.data.file) {
-        // Replace temp file with real one (mostly happens via onUpdate refetch, but local state update handles it too)
-        const newFile = response.data.file;
-        setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
-        // We triggered onFileAdded with temp, now we technically have real ID.
-        // relying on onUpdate() from Sidebar to refresh the board helps.
-      } else {
-        alert("Upload failed: " + (response.data.message || "Unknown error"));
-        // Revert
-        setLocalFiles(prev => prev.filter(f => f.id !== tempId));
-        if (onFileDeleted) onFileDeleted(tempId); // Hack to remove from parent cache
+        if (data.success && data.file) {
+          const newFile = data.file;
+          setLocalFiles(prev => prev.map(f => f.id === tempId ? newFile : f));
+          if (onFileAdded) onFileAdded(newFile);
+        } else {
+          alert("Upload failed: " + (data.message || "Unknown error"));
+          revertOptimistic(tempId);
+        }
+        setUploading(false);
+      },
+      onError: (err) => {
+        pendingFilesRef.current.delete(tempId);
+        console.error("Upload error", err);
+        alert("Upload error");
+        revertOptimistic(tempId);
+        setUploading(false);
       }
-    } catch (error) {
-      console.error("Upload error", error);
-      alert("Upload error");
-      // Revert
-      setLocalFiles(prev => prev.filter(f => f.id !== tempId));
-      if (onFileDeleted) onFileDeleted(tempId);
-    } finally {
-      setUploading(false);
-    }
+    });
+  };
+
+  const revertOptimistic = (tempId: string) => {
+    setLocalFiles(prev => prev.filter(f => f.id !== tempId));
+    if (onFileDeleted) onFileDeleted(tempId);
   };
 
   const handleDeleteFile = async (fileId: string) => {
