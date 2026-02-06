@@ -76,10 +76,13 @@ export default function TicketSidebar({
     companyName: ""
   });
 
+  const [optimisticTicket, setOptimisticTicket] = useState<EmailExtraction | null>(null);
+
   const internalNotes = (ticket?.internal_notes as InternalNote[]) || [];
 
   // --- Sync State with Ticket ---
   useEffect(() => {
+    setOptimisticTicket(null);
     if (ticket) {
       setCurrentPriority(ticket.ticket_priority || "NORMAL");
       setCurrentStatus(ticket.ticket_status || "OPEN");
@@ -266,6 +269,17 @@ export default function TicketSidebar({
   const handleSaveDetails = async () => {
     if (!ticket) return;
 
+    const newSenderString = `${editForm.senderName} <${editForm.senderEmail}>`;
+    const optimisticUpdate = {
+      ...ticket,
+      subject: editForm.subject,
+      sender: newSenderString,
+      company_name: editForm.companyName
+    };
+
+    setOptimisticTicket(optimisticUpdate);
+    setIsEditing(false);
+
     try {
       const payload = {
         gmail_id: ticket.gmail_id,
@@ -278,27 +292,29 @@ export default function TicketSidebar({
       const res = await api.post('/ticket/update-details', payload);
       if (res.data.success) {
         if (onUpdate) onUpdate();
-        setIsEditing(false);
-        // Create local log for immediate feedback if needed, 
-        // but backend logs generic "EDIT_DETAILS". 
-        // We can just rely on refetch from onUpdate.
       } else {
         alert("Failed to update details");
+        setOptimisticTicket(null);
+        setIsEditing(true);
       }
     } catch (error) {
       console.error("Update details error", error);
       alert("Error updating details");
+      setOptimisticTicket(null);
+      setIsEditing(true);
     }
   };
 
   if (!ticket || !isOpen) return null;
 
-  const senderName = ticket.sender.split("<")[0].trim();
-  const senderEmail = ticket.sender.match(/<([^>]+)>/)?.[1] || ticket.sender;
-  const companyName = ticket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
+  const displayTicket = optimisticTicket || ticket;
+
+  const senderName = displayTicket.sender.split("<")[0].trim();
+  const senderEmail = displayTicket.sender.match(/<([^>]+)>/)?.[1] || displayTicket.sender;
+  const companyName = displayTicket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
   let formattedDate = "Unknown Date";
   try {
-    formattedDate = ticket.received_at ? format(new Date(ticket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
+    formattedDate = displayTicket.received_at ? format(new Date(displayTicket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
   } catch (e) {
     console.error("Date parsing error", e);
     formattedDate = "Invalid Date";
@@ -435,7 +451,7 @@ export default function TicketSidebar({
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold text-white mb-6 leading-snug">{ticket.subject || "No Subject"}</h2>
+                <h2 className="text-xl font-semibold text-white mb-6 leading-snug">{displayTicket.subject || "No Subject"}</h2>
                 <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                   <div className="flex items-center gap-3 text-gray-400"><User size={16} /><span className="truncate">{senderName}</span></div>
                   <div className="flex items-center gap-3 text-gray-400"><Mail size={16} /><span className="truncate">{senderEmail}</span></div>
