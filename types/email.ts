@@ -55,4 +55,5 @@ export interface EmailExtraction {
   activity_logs?: ActivityLog[];
   internal_notes?: any[];
   assigned_to?: string;
+  updated_at?: string;
 }

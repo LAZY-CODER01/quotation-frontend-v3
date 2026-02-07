@@ -14,15 +14,26 @@ export default function TicketCard({ data }: TicketCardProps) {
   const senderEmail = data.sender.match(/<([^>]+)>/)?.[1] || data.sender;
 
   // 3. Extract Assignee First Name
-  const assigneeName = data.assigned_to 
+  const assigneeName = data.assigned_to
     ? data.assigned_to.split(" ")[0] // Take first word
     : "Unassigned";
 
   let timeDisplay = "";
   try {
-    timeDisplay = format(new Date(data.received_at), "HH:mm");
+    const timeValue = data.updated_at || data.received_at;
+    const date = new Date(timeValue);
+    const now = new Date();
+    const isToday = date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    // If today: "2:30 PM"
+    // If older: "Feb 3, 2:30 PM"
+    timeDisplay = isToday
+      ? format(date, "h:mm a")
+      : format(date, "h:mm a");
   } catch (e) {
-    timeDisplay = data.received_at;
+    timeDisplay = data.updated_at || data.received_at || "";
   }
 
   const itemsCount = data.extraction_result?.Requirements?.length || 0;
@@ -40,7 +51,7 @@ export default function TicketCard({ data }: TicketCardProps) {
         }
       `}
     >
-      
+
       {/* Header: Name and Time */}
       <div className="flex justify-between items-start">
         <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate pr-2" title={senderName}>
@@ -114,10 +125,10 @@ export default function TicketCard({ data }: TicketCardProps) {
 
         {/* Assigned User (First Name) */}
         <div className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded ${data.assigned_to ? "text-blue-400 bg-blue-500/10" : "text-gray-600"}`}>
-            <User size={10} />
-            <span className="font-medium truncate max-w-[80px]">
-                {assigneeName}
-            </span>
+          <User size={10} />
+          <span className="font-medium truncate max-w-[80px]">
+            {assigneeName}
+          </span>
         </div>
 
       </div>

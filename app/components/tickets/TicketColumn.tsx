@@ -34,14 +34,16 @@ export default function TicketColumn({
   slug,
 }: TicketColumnProps) {
 
-  // 1. Group tickets by Date
+  // 1. Group tickets by Date (Updated or Received)
   const groupedTickets = useMemo(() => {
     const groups: { [key: string]: EmailExtraction[] } = {};
 
     tickets.forEach((ticket) => {
-      if (!ticket.received_at) return;
+      // Use updated_at if available, else received_at
+      const relevantDate = ticket.updated_at || ticket.received_at;
+      if (!relevantDate) return;
 
-      const dateObj = new Date(ticket.received_at);
+      const dateObj = new Date(relevantDate);
       // Create a sortable key (YYYY-MM-DD)
       const dateKey = format(dateObj, "yyyy-MM-dd");
 
@@ -49,6 +51,15 @@ export default function TicketColumn({
         groups[dateKey] = [];
       }
       groups[dateKey].push(ticket);
+    });
+
+    // Sort tickets within each group by time (newest first)
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.received_at).getTime();
+        const dateB = new Date(b.updated_at || b.received_at).getTime();
+        return dateB - dateA;
+      });
     });
 
     // Sort keys descending (Newest date first)

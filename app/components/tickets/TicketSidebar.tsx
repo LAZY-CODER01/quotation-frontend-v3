@@ -140,6 +140,7 @@ export default function TicketSidebar({
     if (!ticket) return;
 
     setCurrentAssignee(newAssignee); // Optimistic Update
+    setOptimisticTicket(prev => ({ ...(prev || ticket), assigned_to: newAssignee, updated_at: new Date().toISOString() }));
 
     try {
       const res = await api.post('/ticket/assign', {
@@ -171,6 +172,7 @@ export default function TicketSidebar({
         setNoteText("");
         if (onNoteAdded) onNoteAdded(response.data.note);
         createLocalLog("NOTE_ADDED", "Added an internal note");
+        setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() }));
       } else {
         alert("Failed to add note");
       }
@@ -224,6 +226,7 @@ export default function TicketSidebar({
     setIsPriorityOpen(false);
     setIsUpdatingPriority(true); // Start Loading
     if (onPriorityChanged) onPriorityChanged(newPriority); // Optimistic callback
+    setOptimisticTicket(prev => ({ ...(prev || ticket), ticket_priority: newPriority, updated_at: new Date().toISOString() }));
 
     try {
       await api.post('/ticket/update-priority', { gmail_id: ticket.gmail_id, priority: newPriority });
@@ -248,6 +251,7 @@ export default function TicketSidebar({
     setCurrentStatus(newStatus);
     setIsStatusOpen(false);
     if (onStatusChanged) onStatusChanged(newStatus); // Optimistic callback
+    setOptimisticTicket(prev => ({ ...(prev || ticket), ticket_status: newStatus, updated_at: new Date().toISOString() }));
 
     try {
       const identifier = ticket.ticket_number || `TKT-${ticket.id}`;
@@ -314,7 +318,8 @@ export default function TicketSidebar({
   const companyName = displayTicket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
   let formattedDate = "Unknown Date";
   try {
-    formattedDate = displayTicket.received_at ? format(new Date(displayTicket.received_at), "MMM d, yyyy h:mm a") : "Unknown Date";
+    const timeToShow = displayTicket.updated_at || displayTicket.received_at;
+    formattedDate = timeToShow ? format(new Date(timeToShow), "MMM d, yyyy h:mm a") : "Unknown Date";
   } catch (e) {
     console.error("Date parsing error", e);
     formattedDate = "Invalid Date";
@@ -561,11 +566,11 @@ export default function TicketSidebar({
           <div className="space-y-2 border-t border-white/10 pt-4">
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={(f) => { if (onFileAdded) onFileAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); }} onFileUpdated={(id, amount) => { if (onFileUpdated) onFileUpdated(id, amount); if (onUpdate) onUpdate(); }} isAdmin={isAdmin} /></div>}
+              {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={(f) => { if (onFileAdded) onFileAdded(f); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileUpdated={(id, amount) => { if (onFileUpdated) onFileUpdated(id, amount); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} isAdmin={isAdmin} /></div>}
             </div>
             <div className="border-b border-white/5 pb-2">
               <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
-              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={(f) => { if (onCPOAdded) onCPOAdded(f); if (onUpdate) onUpdate(); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); }} isAdmin={isAdmin} /></div>}
+              {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={(f) => { if (onCPOAdded) onCPOAdded(f); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} isAdmin={isAdmin} /></div>}
             </div>
             <div>
               <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
