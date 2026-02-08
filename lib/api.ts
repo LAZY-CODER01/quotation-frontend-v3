@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from "axios";
 import Cookies from "js-cookie";
+import { requestStore } from "./requestStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -14,6 +15,15 @@ const api: AxiosInstance = axios.create({
 // Request Interceptor: Attach Token & Handle Headers
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
+        // IGNORE Global Loading for Polling Request (e.g. GET /emails?days=10)
+        const isPolling = config.url?.includes("/emails") && config.params?.days == 10;
+
+        if (!isPolling) {
+            requestStore.increment();
+        } else {
+            (config as any)._skipGlobalLoading = true;
+        }
+
         const token = Cookies.get("token");
 
         if (token && config.headers) {
@@ -36,14 +46,25 @@ api.interceptors.request.use(
         return config;
     },
     (error: AxiosError) => {
+        if (error.config && !(error.config as any)._skipGlobalLoading) {
+            requestStore.decrement();
+        }
         return Promise.reject(error);
     }
 );
 
 // Response Interceptor: Handle 401 (Unauthorized)
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (!(response.config as any)._skipGlobalLoading) {
+            requestStore.decrement();
+        }
+        return response;
+    },
     (error: AxiosError) => {
+        if (error.config && !(error.config as any)._skipGlobalLoading) {
+            requestStore.decrement();
+        }
         if (error.response && error.response.status === 401) {
             if (typeof window !== "undefined") {
                 Cookies.remove("token");

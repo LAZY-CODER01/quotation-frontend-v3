@@ -8,6 +8,7 @@ import TicketsBoard from "./components/tickets/TicketBoard";
 import TicketSidebar from "./components/tickets/TicketSidebar";
 import RequirementsEditor from "./components/dashboard/RequirementsEditor";
 import FilterSidebar from "./components/layout/FilterSidebar"; // Check if this path matches your folder structure
+import ApiStatusIndicator from "./components/ui/ApiStatusIndicator";
 import { Clock, Loader2 } from "lucide-react";
 // Types
 import { FilterState, INITIAL_FILTERS } from "./../types/filters";
@@ -224,6 +225,8 @@ export default function DashboardPage() {
                 <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
                 {"Load Older"}
               </button>
+
+              <ApiStatusIndicator />
 
               <button
                 onClick={() => setIsFilterOpen(true)}
