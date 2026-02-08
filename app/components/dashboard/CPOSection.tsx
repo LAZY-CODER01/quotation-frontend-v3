@@ -80,6 +80,7 @@ const CPORow = ({
           href={file.url}
           target="_blank"
           rel="noopener noreferrer"
+          download
           className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded border border-white/5 hover:border-white/10 transition-all"
         >
           <Download size={12} />
