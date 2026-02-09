@@ -3,6 +3,7 @@ import { Upload, FileText, Loader2, ExternalLink, X, Check, Trash2, Download } f
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 import { useUpload } from "../../../context/UploadContext"; // ✅ Import hook
+import { formatUaeDateTime, toUaeDate } from "../../../app/lib/time";
 
 interface QuotationSectionProps {
   ticket: EmailExtraction;
@@ -84,10 +85,7 @@ const FileRow = ({
             {file.reference_id || "No Ref ID"}
           </p>
           <p className="text-[10px] text-gray-500">
-            {new Date(file.uploaded_at).toLocaleString([], {
-              year: 'numeric', month: 'short', day: 'numeric',
-              hour: '2-digit', minute: '2-digit'
-            })}
+            {formatUaeDateTime(file.uploaded_at)}
           </p>
         </div>
       </div>
@@ -357,7 +355,11 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
         {localFiles && localFiles.length > 0 ? (
           // ✅ SORTING APPLIED HERE
           [...localFiles]
-            .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
+            .sort((a, b) => {
+              const tb = toUaeDate(b.uploaded_at)?.getTime() ?? 0;
+              const ta = toUaeDate(a.uploaded_at)?.getTime() ?? 0;
+              return tb - ta;
+            })
             .map((file) => (
               <FileRow
                 key={file.id}

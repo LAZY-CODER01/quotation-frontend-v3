@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/api";
@@ -10,6 +10,10 @@ import TicketCard from "../../../components/tickets/TicketCard";
 import TicketSidebar from "../../../components/tickets/TicketSidebar";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import {
+  getUaeFriendlyDayLabel,
+  toUaeDate,
+} from "../../../lib/time";
 
 // Map slug to backend statuses
 const STATUS_MAP: Record<string, string[]> = {
@@ -58,11 +62,13 @@ export default function StatusPage() {
         // Filter locally as per plan
         select: (allTickets) => {
             if (!targetStatuses.length) return [];
-            return allTickets.filter((t) => {
+            return allTickets.filter((t: EmailExtraction) => {
                 const s = t.ticket_status?.toUpperCase() || "OPEN";
                 return targetStatuses.includes(s);
             }).sort((a, b) => {
-                return new Date(b.received_at).getTime() - new Date(a.received_at).getTime();
+                const tb = toUaeDate(b.received_at)?.getTime() ?? 0;
+                const ta = toUaeDate(a.received_at)?.getTime() ?? 0;
+                return tb - ta;
             });
         },
         refetchInterval: 30000, // Poll every 30s
@@ -259,16 +265,10 @@ export default function StatusPage() {
                     {(() => {
                         const groups: { title: string; tickets: EmailExtraction[] }[] = [];
                         tickets.forEach((ticket) => {
-                            const date = new Date(ticket.received_at);
-                            let groupTitle = "";
-                            if (isToday(date)) {
-                                groupTitle = "Today";
-                            } else if (isYesterday(date)) {
-                                groupTitle = "Yesterday";
-                            } else {
-                                groupTitle = format(date, "MMMM d, yyyy");
-                            }
+                            const date = toUaeDate(ticket.received_at);
+                            if (!date) return;
 
+                            const groupTitle = getUaeFriendlyDayLabel(date);
                             const lastGroup = groups[groups.length - 1];
                             if (lastGroup && lastGroup.title === groupTitle) {
                                 lastGroup.tickets.push(ticket);

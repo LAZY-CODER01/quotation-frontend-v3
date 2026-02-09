@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import api from "../../../lib/api";
 import { RotateCw, User, Loader2 } from "lucide-react";
 import TicketSidebar from "../tickets/TicketSidebar";
+import { formatUaeDateTime } from "../../../app/lib/time";
 
 export default function TicketRequests() {
     const [completionRequests, setCompletionRequests] = useState<any[]>([]);
@@ -71,9 +72,11 @@ export default function TicketRequests() {
                                     <span className="text-sm font-medium text-white truncate max-w-[300px]">{ticket.subject}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-xs text-gray-500">
-                                    <span className="flex items-center gap-1"><User size={12} /> {ticket.assigned_to || "Unassigned"}</span>
+                                    <span className="flex items-center gap-1">
+                                        <User size={12} /> {ticket.assigned_to || "Unassigned"}
+                                    </span>
                                     <span>•</span>
-                                    <span>{new Date(ticket.updated_at).toLocaleString()}</span>
+                                    <span>{formatUaeDateTime(ticket.updated_at || ticket.received_at)}</span>
                                 </div>
                             </div>
                             <button

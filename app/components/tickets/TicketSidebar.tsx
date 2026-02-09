@@ -6,12 +6,16 @@ import {
   FileCheck, AlertTriangle, CheckCircle2, XCircle,
   ShoppingBag, Truck, Loader2, History, RotateCw
 } from "lucide-react";
-import { format } from "date-fns";
 import { EmailExtraction, QuotationFile, ActivityLog } from "../../../types/email";
 import api from "../../../lib/api";
 import QuotationSection from "../dashboard/QuotationSection";
 import CPOSection from "../dashboard/CPOSection";
 import { useAuth } from "../../../context/AuthContext";
+import {
+  formatUaeDateTime,
+  formatUaeTime,
+  toUaeDate,
+} from "../../../app/lib/time";
 
 interface InternalNote {
   id: string;
@@ -105,7 +109,11 @@ export default function TicketSidebar({
 
   // --- Helpers ---
   const sortedLogs = ticket?.activity_logs
-    ? [...ticket.activity_logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    ? [...ticket.activity_logs].sort((a, b) => {
+        const tb = toUaeDate(b.timestamp)?.getTime() ?? 0;
+        const ta = toUaeDate(a.timestamp)?.getTime() ?? 0;
+        return tb - ta;
+      })
     : [];
 
   const getLogIcon = (action: string) => {
@@ -316,10 +324,19 @@ export default function TicketSidebar({
   const senderName = displayTicket.sender.split("<")[0].trim();
   const senderEmail = displayTicket.sender.match(/<([^>]+)>/)?.[1] || displayTicket.sender;
   const companyName = displayTicket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
-  let formattedDate = "Unknown Date";
+ let formattedDate = "Unknown Date";
   try {
-    const timeToShow = displayTicket.updated_at || displayTicket.received_at;
-    formattedDate = timeToShow ? format(new Date(timeToShow), "MMM d, yyyy h:mm a") : "Unknown Date";
+    // Show the email's original received time in the header (UAE time)
+    const timeToShow = displayTicket.received_at || displayTicket.updated_at;
+    
+    if (timeToShow) {
+      const dateObj = toUaeDate(timeToShow);
+      if (dateObj) {
+        // ⬇️ Subtract 4 hours (4 * 60 * 60 * 1000 ms)
+        const adjustedDate = new Date(dateObj.getTime() - (4 * 60 * 60 * 1000));
+        formattedDate = formatUaeDateTime(adjustedDate);
+      }
+    }
   } catch (e) {
     console.error("Date parsing error", e);
     formattedDate = "Invalid Date";
@@ -578,7 +595,28 @@ export default function TicketSidebar({
                 <div className="mt-2 space-y-4 animate-in slide-in-from-top-2 duration-200">
                   <div className="space-y-2"><textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="w-full h-20 bg-[#0A0B0D] border border-white/10 rounded-lg p-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Add an internal note..." ></textarea><button onClick={handleAddNote} disabled={isSendingNote || !noteText.trim()} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/20">{isSendingNote ? <Loader2 size={16} className="animate-spin " /> : <Send size={16} className="text-emerald-500" />} Add Note</button></div>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                    {internalNotes.length > 0 ? (internalNotes.map((note) => (<div key={note.id} className="bg-[#0A0B0D] border border-white/5 rounded-lg p-3 space-y-1"><div className="flex items-center justify-between text-xs text-gray-500"><span className="font-semibold text-emerald-500">{note.author}</span><span>{new Date(note.created_at).toLocaleString()}</span></div><p className="text-sm text-gray-300 whitespace-pre-wrap">{note.text}</p></div>))) : <div className="text-center text-xs text-gray-600 italic py-2">No notes yet.</div>}
+                    {internalNotes.length > 0 ? (
+                      internalNotes.map((note) => (
+                        <div
+                          key={note.id}
+                          className="bg-[#0A0B0D] border border-white/5 rounded-lg p-3 space-y-1"
+                        >
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span className="font-semibold text-emerald-500">
+                              {note.author}
+                            </span>
+                            <span>{formatUaeDateTime(note.created_at)}</span>
+                          </div>
+                          <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                            {note.text}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-xs text-gray-600 italic py-2">
+                        No notes yet.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -592,7 +630,14 @@ export default function TicketSidebar({
                       <div key={log.id} className="relative pl-6 pb-6 border-l border-white/10 last:border-0 last:pb-0 group">
                         <div className="absolute -left-[9px] top-0 w-5 h-5 rounded-full bg-[#181A1F] border border-white/10 flex items-center justify-center">{getLogIcon(log.action)}</div>
                         <div className="space-y-1">
-                          <div className="flex items-center justify-between"><span className="text-xs font-semibold text-gray-200">{log.user}</span><span className="text-[10px] text-gray-500">{format(new Date(log.timestamp), 'MMM d, h:mm a')}</span></div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-gray-200">
+                              {log.user}
+                            </span>
+                            <span className="text-[10px] text-gray-500">
+                              {formatUaeTime(log.timestamp)}
+                            </span>
+                          </div>
                           <p className="text-xs text-gray-400">{log.description}</p>
                         </div>
                       </div>

@@ -3,6 +3,7 @@ import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Bankn
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 import { useUpload } from "../../../context/UploadContext"; // ✅ Custom Hook
+import { formatUaeDateTime, toUaeDate } from "../../../app/lib/time";
 interface CPOSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
@@ -48,10 +49,7 @@ const CPORow = ({
           <div className="flex items-center gap-2 text-[10px] text-gray-500">
             <span>
               {file.uploaded_at
-                ? new Date(file.uploaded_at).toLocaleString([], {
-                  year: 'numeric', month: 'short', day: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                })
+                ? formatUaeDateTime(file.uploaded_at)
                 : "Date N/A"}
             </span>
           </div>
@@ -131,8 +129,8 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
         map.set(key, file);
       }
       serverFiles = Array.from(map.values()).sort((a, b) => {
-        const dateA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
-        const dateB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
+        const dateA = a.uploaded_at ? toUaeDate(a.uploaded_at)?.getTime() ?? 0 : 0;
+        const dateB = b.uploaded_at ? toUaeDate(b.uploaded_at)?.getTime() ?? 0 : 0;
         return dateB - dateA;
       });
     }

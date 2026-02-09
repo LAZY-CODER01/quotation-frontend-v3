@@ -8,6 +8,7 @@ import {
 import TicketSidebar from "../tickets/TicketSidebar";
 import { EmailExtraction } from "../../../types/email";
 import { useTickets } from "../../../hooks/useTickets";
+import { formatUae, formatUaeTime } from "../../../app/lib/time";
 
 export default function TicketMonitor() {
     // 1. Replaced separate state and useEffect with useTickets hook via React Query
@@ -57,12 +58,15 @@ export default function TicketMonitor() {
         };
     };
     console.log("Rendering TicketMonitor with tickets:", tickets);
-    // Helper to format date
+    // Helper to format date in UAE time
     const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
         return {
-            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
-            date: date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' })
+            time: formatUaeTime(dateString),
+            date: formatUae(dateString, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+            }),
         };
     };
 

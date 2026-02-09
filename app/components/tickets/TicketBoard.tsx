@@ -5,6 +5,7 @@ import TicketColumn from "./TicketColumn";
 import { EmailExtraction } from "../../../types/email";
 import { FilterState } from "../../../types/filters";
 import { useInfiniteTickets } from "../../../hooks/useTickets";
+import { formatUae } from "../../../app/lib/time";
 
 interface TicketsBoardProps {
   onTicketClick?: (ticket: EmailExtraction) => void;
@@ -69,7 +70,11 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
   const getCol = (statusArray: string[]) =>
     filteredEmails.filter(e => statusArray.includes(e.ticket_status?.toUpperCase() || 'OPEN'));
 
-  const todayDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const todayDate = formatUae(new Date(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
 
   if (isLoading && emails.length === 0) return <div className="p-8 text-center text-zinc-500">Loading tickets...</div>;
 

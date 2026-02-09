@@ -1,5 +1,6 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
+import { toUaeDate } from "../app/lib/time";
 import { EmailExtraction } from "../types/email";
 
 // Helper to fetch tickets
@@ -55,9 +56,11 @@ export function useInfiniteTickets(
 
             // Find the oldest date in the last page to be the next cursor
             const oldestDate = lastPage.reduce((oldest, current) => {
-                return new Date(current.received_at) < new Date(oldest)
-                    ? current.received_at
-                    : oldest;
+                const currentDate = toUaeDate(current.received_at);
+                const oldestDateObj = toUaeDate(oldest);
+                if (!currentDate) return oldest;
+                if (!oldestDateObj) return current.received_at;
+                return currentDate < oldestDateObj ? current.received_at : oldest;
             }, lastPage[0].received_at);
 
             return oldestDate;

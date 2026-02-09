@@ -1,6 +1,6 @@
-import { AlertTriangle, Box, User } from "lucide-react"; // Added User icon
+import { AlertTriangle, Box, User } from "lucide-react";
 import { EmailExtraction } from "../../../types/email";
-import { format } from "date-fns";
+import { formatUaeTime, toUaeDate } from "../../../app/lib/time";
 
 interface TicketCardProps {
   data: EmailExtraction;
@@ -20,18 +20,15 @@ export default function TicketCard({ data }: TicketCardProps) {
 
   let timeDisplay = "";
   try {
-    const timeValue = data.updated_at || data.received_at;
-    const date = new Date(timeValue);
-    const now = new Date();
-    const isToday = date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear();
-
-    // If today: "2:30 PM"
-    // If older: "Feb 3, 2:30 PM"
-    timeDisplay = isToday
-      ? format(date, "h:mm a")
-      : format(date, "h:mm a");
+    // For card display, always show the original email received time in UAE
+    const timeValue = data.received_at || data.updated_at;
+    const date = toUaeDate(timeValue);
+    if (date) {
+      const adjustedDate = new Date(date.getTime() - (4 * 60 * 60 * 1000));
+      timeDisplay = formatUaeTime(adjustedDate);
+    } else {
+      timeDisplay = "";
+    }
   } catch (e) {
     timeDisplay = data.updated_at || data.received_at || "";
   }

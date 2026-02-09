@@ -3,7 +3,8 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import TicketCard from "./TicketCard";
 import { EmailExtraction } from "../../../types/email";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
+import { getUaeDayKey, getUaeFriendlyDayLabel, toUaeDate } from "../../../app/lib/time";
 
 interface TicketColumnProps {
   title: string;
@@ -43,9 +44,9 @@ export default function TicketColumn({
       const relevantDate = ticket.updated_at || ticket.received_at;
       if (!relevantDate) return;
 
-      const dateObj = new Date(relevantDate);
-      // Create a sortable key (YYYY-MM-DD)
-      const dateKey = format(dateObj, "yyyy-MM-dd");
+      // Create a sortable key (YYYY-MM-DD) in UAE time
+      const dateKey = getUaeDayKey(relevantDate);
+      if (!dateKey) return;
 
       if (!groups[dateKey]) {
         groups[dateKey] = [];
@@ -56,8 +57,8 @@ export default function TicketColumn({
     // Sort tickets within each group by time (newest first)
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => {
-        const dateA = new Date(a.updated_at || a.received_at).getTime();
-        const dateB = new Date(b.updated_at || b.received_at).getTime();
+        const dateA = toUaeDate(a.updated_at || a.received_at)?.getTime() ?? 0;
+        const dateB = toUaeDate(b.updated_at || b.received_at)?.getTime() ?? 0;
         return dateB - dateA;
       });
     });
@@ -65,14 +66,6 @@ export default function TicketColumn({
     // Sort keys descending (Newest date first)
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
   }, [tickets]);
-
-  // Helper to format the date header nicely
-  const getDateLabel = (dateStr: string) => {
-    const date = new Date(dateStr);
-    if (isToday(date)) return "Today";
-    if (isYesterday(date)) return "Yesterday";
-    return format(date, "MMM d, yyyy"); // e.g. "Jan 24, 2025"
-  };
 
   return (
     <div className="flex h-full  w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
@@ -114,7 +107,7 @@ export default function TicketColumn({
                 <div className="flex items-center gap-2 py-2 opacity-60">
                   <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
                   <span className="text-[10px] font-medium text-[rgb(var(--muted))] uppercase tracking-wider whitespace-nowrap">
-                    {getDateLabel(dateKey)}
+                    {getUaeFriendlyDayLabel(dateKey)}
                   </span>
                   <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
                 </div>
