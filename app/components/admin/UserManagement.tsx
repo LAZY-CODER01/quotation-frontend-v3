@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import api from "../../../lib/api";
-import { User, Hash, Lock, CheckCircle, UserPlus, Users, Loader2, XCircle, RefreshCw } from "lucide-react";
+import { User, Hash, Lock, CheckCircle, UserPlus, Users, Loader2, XCircle, RefreshCw, Trash2, Key, X, Save } from "lucide-react";
 
 interface UserData {
     id: string;
@@ -20,12 +20,19 @@ export default function UserManagement() {
     const [userForm, setUserForm] = useState({
         username: "",
         password: "",
-        role: "user"
-
+        role: "user",
+        employee_code: "DBSQ"
     });
     const [creatingUser, setCreatingUser] = useState(false);
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
+
+    // Change Password State
+    const [editingUser, setEditingUser] = useState<UserData | null>(null);
+    const [newPassword, setNewPassword] = useState("");
+    const [updatingPassword, setUpdatingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
 
     // Fetch users
     useEffect(() => {
@@ -57,15 +64,20 @@ export default function UserManagement() {
 
         setCreatingUser(true);
         try {
-            // Note: employee_code is now auto-generated on the backend
-            const response = await api.post("/admin/users", userForm);
+            const payload = {
+                ...userForm,
+                employee_code: userForm.employee_code.trim() || undefined // Send undefined if empty to let backend auto-generate
+            };
+
+            const response = await api.post("/admin/users", payload);
             if (response.data.success) {
                 setSuccessMsg(`User ${userForm.username} created successfully!`);
                 // Reset form
                 setUserForm({
                     username: "",
                     password: "",
-                    role: "user"
+                    role: "user",
+                    employee_code: ""
                 });
                 // Refresh list
                 setRefreshTrigger(prev => prev + 1);
@@ -77,7 +89,50 @@ export default function UserManagement() {
             setCreatingUser(false);
         }
     };
-    console.log("Users:", users);
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+
+        try {
+            const response = await api.delete(`/admin/users/${userId}`);
+            if (response.data.success) {
+                setSuccessMsg("User deleted successfully");
+                setRefreshTrigger(prev => prev + 1);
+            }
+        } catch (err: any) {
+            console.error("Delete user error", err);
+            setError(err.response?.data?.error || "Failed to delete user");
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        if (!editingUser || !newPassword) return;
+
+        setUpdatingPassword(true);
+        try {
+            const response = await api.put(`/admin/users/${editingUser.id}/password`, {
+                password: newPassword
+            });
+
+            if (response.data.success) {
+                setPasswordSuccess(`Password updated for ${editingUser.username}`);
+                setNewPassword("");
+                setTimeout(() => {
+                    setEditingUser(null);
+                    setPasswordSuccess("");
+                    setRefreshTrigger(prev => prev + 1);
+                }, 1500);
+            }
+        } catch (err: any) {
+            setPasswordError(err.response?.data?.error || "Failed to update password");
+        } finally {
+            setUpdatingPassword(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -100,11 +155,25 @@ export default function UserManagement() {
                     </div>
                     <div>
                         <h2 className="text-xl font-semibold text-white">Create User</h2>
-                        <p className="text-sm text-gray-400">Add new employees or admins. Employee Code will be auto-generated.</p>
+                        <p className="text-sm text-gray-400">Add new employees or admins. Employee Code is optional (auto-generated if empty).</p>
                     </div>
                 </div>
 
-                <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form onSubmit={handleCreateUser} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Employee Code (Optional) */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
+                            <Hash size={12} /> Employee Code (Opt)
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="DBSQ-XXX"
+                            className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
+                            value={userForm.employee_code}
+                            onChange={e => setUserForm({ ...userForm, employee_code: e.target.value })}
+                        />
+                    </div>
+
                     {/* Username */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
@@ -131,7 +200,6 @@ export default function UserManagement() {
                             value={userForm.password}
                             onChange={e => setUserForm({ ...userForm, password: e.target.value })}
                         />
-                        <p className="text-[10px] text-gray-500">Visible for initial setup only</p>
                     </div>
 
                     {/* Role Selection */}
@@ -150,7 +218,7 @@ export default function UserManagement() {
                     </div>
 
                     {/* Submit Button */}
-                    <div className="md:col-span-3 mt-2">
+                    <div className="md:col-span-4 mt-2">
                         <button
                             type="submit"
                             disabled={creatingUser}
@@ -161,7 +229,7 @@ export default function UserManagement() {
                             ) : (
                                 <UserPlus size={16} />
                             )}
-                            <span>{creatingUser ? "Creating and Auto-Generating ID..." : "Create User"}</span>
+                            <span>{creatingUser ? "Creating User..." : "Create User"}</span>
                         </button>
                     </div>
                 </form>
@@ -191,12 +259,13 @@ export default function UserManagement() {
                                 <th className="p-4 font-medium">Username</th>
                                 <th className="p-4 font-medium">Role</th>
                                 <th className="p-4 font-medium text-right">Passwd</th>
+                                <th className="p-4 font-medium text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10">
                             {users.length === 0 && !loading ? (
                                 <tr>
-                                    <td colSpan={4} className="p-8 text-center text-gray-500">
+                                    <td colSpan={5} className="p-8 text-center text-gray-500">
                                         No users found.
                                     </td>
                                 </tr>
@@ -231,6 +300,27 @@ export default function UserManagement() {
                                         <td className="p-4 text-right text-gray-500 text-xs italic">
                                             {user.password_hash}
                                         </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingUser(user);
+                                                        setNewPassword("");
+                                                        setPasswordError("");
+                                                        setPasswordSuccess("");
+                                                    }}
+                                                    className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Change Password"
+                                                >
+                                                    <Key size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete User"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             )}
@@ -238,6 +328,60 @@ export default function UserManagement() {
                     </table>
                 </div>
             </div>
+
+            {/* Change Password Modal */}
+            {editingUser && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#181A1F] border border-white/10 rounded-xl shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center justify-between p-4 border-b border-white/10">
+                            <h3 className="text-white font-semibold">Change Password</h3>
+                            <button onClick={() => setEditingUser(null)} className="text-gray-500 hover:text-white">
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleChangePassword} className="p-6 space-y-4">
+                            {passwordError && (
+                                <div className="text-red-400 text-xs p-2 bg-red-500/10 border border-red-500/20 rounded">
+                                    {passwordError}
+                                </div>
+                            )}
+                            {passwordSuccess && (
+                                <div className="text-emerald-400 text-xs p-2 bg-emerald-500/10 border border-emerald-500/20 rounded">
+                                    {passwordSuccess}
+                                </div>
+                            )}
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-gray-400">
+                                    New Password for <span className="text-white">{editingUser.username}</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="New secure password"
+                                    className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={updatingPassword || !newPassword}
+                                className="w-full flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {updatingPassword ? (
+                                    <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                    <Save size={16} />
+                                )}
+                                <span>Update Password</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
