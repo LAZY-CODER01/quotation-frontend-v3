@@ -12,7 +12,7 @@ export default function TicketCard({ data }: TicketCardProps) {
 
   // 2. Extract Email (e.g., "avinashmaurya430@gmail.com")
   const senderEmail = data.sender.match(/<([^>]+)>/)?.[1] || data.sender;
-
+  const companyName = data.company_name ? ` ${data.company_name}` : "No Company Name";
   // 3. Extract Assignee First Name
   const assigneeName = data.assigned_to
     ? data.assigned_to.split(" ")[0] // Take first word
@@ -51,8 +51,8 @@ export default function TicketCard({ data }: TicketCardProps) {
 
       {/* Header: Name and Time */}
       <div className="flex justify-between items-start">
-        <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate pr-2" title={senderName}>
-          {senderName}
+        <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate pr-2" title={companyName}>
+          {companyName}
         </h4>
         <span className="text-xs font-medium text-[rgb(var(--muted))] whitespace-nowrap shrink-0">
           {timeDisplay}

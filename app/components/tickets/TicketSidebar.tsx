@@ -353,20 +353,20 @@ export default function TicketSidebar({
     ? ticket.cpo_files[ticket.cpo_files.length - 1]
     : null;
 
-  const dbqId = latestQuotation?.name;
+const dbqId = latestQuotation?.name?.substring(0, 11);
   const poId = latestCPO?.name;
 
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-      <div className="fixed top-0 right-0 h-full w-[650px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
+      <div className="fixed top-0 right-0 h-full w-[700px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
 
         {/* Top Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-2">
 
             {/* Ticket ID */}
-            <span className="font-mono text-xs font-bold text-gray-400 bg-white/5 px-2 py-1 rounded border border-white/10">
+            <span className="font-mono text-[12px] font-bold text-gray-400 bg-white/5 px-2 py-1 rounded border border-white/10">
               {ticket.ticket_number || `TKT-${ticket.id}`}
             </span>
 
@@ -374,7 +374,7 @@ export default function TicketSidebar({
             {dbqId && (
               <>
                 <div className="w-4 h-[1px] bg-gray-700" />
-                <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                <span className="font-mono text-[12px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
                   {dbqId}
                 </span>
               </>
@@ -384,7 +384,7 @@ export default function TicketSidebar({
             {poId && (
               <>
                 <div className="w-4 h-[1px] bg-gray-700" />
-                <span className="font-mono text-xs font-bold text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
+                <span className="font-mono text-[12px] font-bold text-blue-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
                   {poId}
                 </span>
               </>

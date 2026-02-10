@@ -79,6 +79,14 @@ export default function Sidebar() {
                         collapsed={isCollapsed}
                     />
 
+                    <SidebarItem
+                        icon={<UsersIcon size={18} />}
+                        label="My Profile"
+                        onClick={() => router.push('/profile')}
+                        active={pathname === '/profile'}
+                        collapsed={isCollapsed}
+                    />
+
                     {/* Admin Section - Only visible to Admins */}
                     {isMounted && user?.role === 'ADMIN' && (
                         <>
