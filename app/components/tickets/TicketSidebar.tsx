@@ -110,10 +110,10 @@ export default function TicketSidebar({
   // --- Helpers ---
   const sortedLogs = ticket?.activity_logs
     ? [...ticket.activity_logs].sort((a, b) => {
-        const tb = toUaeDate(b.timestamp)?.getTime() ?? 0;
-        const ta = toUaeDate(a.timestamp)?.getTime() ?? 0;
-        return tb - ta;
-      })
+      const tb = toUaeDate(b.timestamp)?.getTime() ?? 0;
+      const ta = toUaeDate(a.timestamp)?.getTime() ?? 0;
+      return tb - ta;
+    })
     : [];
 
   const getLogIcon = (action: string) => {
@@ -324,11 +324,11 @@ export default function TicketSidebar({
   const senderName = displayTicket.sender.split("<")[0].trim();
   const senderEmail = displayTicket.sender.match(/<([^>]+)>/)?.[1] || displayTicket.sender;
   const companyName = displayTicket.company_name || (senderEmail.includes("@") ? senderEmail.split("@")[1].split(".")[0].toUpperCase() : "Unknown");
- let formattedDate = "Unknown Date";
+  let formattedDate = "Unknown Date";
   try {
     // Show the email's original received time in the header (UAE time)
     const timeToShow = displayTicket.received_at || displayTicket.updated_at;
-    
+
     if (timeToShow) {
       const dateObj = toUaeDate(timeToShow);
       if (dateObj) {
@@ -353,8 +353,8 @@ export default function TicketSidebar({
     ? ticket.cpo_files[ticket.cpo_files.length - 1]
     : null;
 
-  const dbqId = latestQuotation?.reference_id;
-  const poId = latestCPO?.reference_id;
+  const dbqId = latestQuotation?.name;
+  const poId = latestCPO?.name;
 
   return (
     <>
