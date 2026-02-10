@@ -6,6 +6,8 @@ import { EmailExtraction } from "../../../types/email";
 import { FilterState } from "../../../types/filters";
 import { useInfiniteTickets } from "../../../hooks/useTickets";
 import { formatUae } from "../../../app/lib/time";
+import { useSearch } from "../../../context/SearchContext";
+import { ticketMatchesSearch } from "../../../app/lib/searchUtils";
 
 interface TicketsBoardProps {
   onTicketClick?: (ticket: EmailExtraction) => void;
@@ -37,8 +39,16 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
   }, [data]);
 
   // 4. Filtering Logic (same as before, but operating on cached data)
+  const { searchQuery } = useSearch();
+
   const filteredEmails = useMemo(() => {
     let result = emails.filter(e => e.extraction_status === "VALID");
+
+    // Global Search Filtering
+    if (searchQuery) {
+      result = result.filter(ticket => ticketMatchesSearch(ticket, searchQuery));
+    }
+
     if (!activeFilters) return result;
 
     return result.filter((ticket) => {
@@ -55,16 +65,17 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
         if (!acceptableStatuses.some(status => norm(status) === currentStatus)) return false;
       }
 
-      // Urgency, Date, and Search filters
+      // Urgency, Date, and Search filters (Legacy search filter removed/ignored if unused)
       if (activeFilters.urgency !== 'ALL') {
         if ((ticket.ticket_priority?.toUpperCase() || 'NON_URGENT') !== activeFilters.urgency.toUpperCase()) return false;
       }
       if (activeFilters.clientEmail && !ticket.sender?.toLowerCase().includes(activeFilters.clientEmail.toLowerCase())) return false;
-      if (activeFilters.ticketNumber && !ticket.ticket_number?.toLowerCase().includes(activeFilters.ticketNumber.toLowerCase())) return false;
+      if (activeFilters.assignedEmployeeName && !ticket.assigned_to?.toLowerCase().includes(activeFilters.assignedEmployeeName.toLowerCase())) return false;
+      // if (activeFilters.ticketNumber && !ticket.ticket_number?.toLowerCase().includes(activeFilters.ticketNumber.toLowerCase())) return false;
 
       return true;
     });
-  }, [emails, activeFilters]);
+  }, [emails, activeFilters, searchQuery]);
 
   // 5. Columns Segregation
   const getCol = (statusArray: string[]) =>

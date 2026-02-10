@@ -129,8 +129,9 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
         <hr className="border-white/5" />
 
         {/* 4. Company & Employee */}
-        {/* <div className="space-y-4">
-           <div>
+        {/* 4. Company & Employee */}
+        <div className="space-y-4">
+          {/* <div>
              <label className="text-xs text-gray-400 mb-1.5 block">Company</label>
              <div className="relative">
                 <Building className="absolute left-3 top-2.5 text-gray-500" size={14} />
@@ -143,23 +144,16 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
                     <option value="comp_1">Company A</option>
                 </select>
              </div>
-           </div>
+           </div> */}
 
-           <div>
-             <label className="text-xs text-gray-400 mb-1.5 block">Assigned Employee</label>
-             <div className="relative">
-                <User className="absolute left-3 top-2.5 text-gray-500" size={14} />
-                <select 
-                    value={localFilters.assignedEmployeeId}
-                    onChange={(e) => handleChange('assignedEmployeeId', e.target.value)}
-                    className="w-full pl-9 bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none appearance-none"
-                >
-                    <option value="all">All Employees</option>
-                    <option value="emp_1">John Doe</option>
-                </select>
-             </div>
-           </div>
-        </div> */}
+          <InputGroup
+            label="Assigned Employee"
+            icon={<User size={14} />}
+            placeholder="Search employee name..."
+            value={localFilters.assignedEmployeeName}
+            onChange={(v: string) => handleChange('assignedEmployeeName', v)}
+          />
+        </div>
 
         {/* 5. Inputs (Email, Ticket #, Quotation) */}
         <div className="space-y-4">

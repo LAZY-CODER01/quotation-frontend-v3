@@ -11,6 +11,7 @@ export const metadata = {
 };
 
 import { UploadProvider } from "../context/UploadContext";
+import { SearchProvider } from "../context/SearchContext";
 
 export default function RootLayout({
   children,
@@ -25,26 +26,26 @@ export default function RootLayout({
         <AuthProvider>
           <QueryProvider>
             <UploadProvider>
-              {/* 1. Screen Container: Locks the app to the viewport size */}
-              <div className="flex h-screen w-screen overflow-hidden">
-                <Suspense fallback={<div className="w-64 bg-[rgb(13,15,19)] border-r h-full shrink-0" />}>
-                  <Sidebar />
-                </Suspense>
+              <SearchProvider>
+                {/* 1. Screen Container: Locks the app to the viewport size */}
+                <div className="flex h-screen w-screen overflow-hidden">
+                  <Suspense fallback={<div className="w-64 bg-[rgb(13,15,19)] border-r h-full shrink-0" />}>
+                    <Sidebar />
+                  </Suspense>
 
-                {/* 2. Main Column: Holds TopBar and Page Content */}
-                {/* CRITICAL FIX: 'overflow-hidden' here prevents the column 
-                   from expanding if the child content is too wide. */}
-                <div className="flex flex-1 flex-col overflow-hidden">
 
-                  {/* TopBar stays fixed width because the parent is locked */}
-                  <TopBar />
+                  <div className="flex flex-1 flex-col overflow-hidden">
 
-                  {/* 3. Main Content Area: Passes the remaining space to the page */}
-                  <main className="flex-1 overflow-y-auto bg-[hsl(var(--bg))]">
-                    {children}
-                  </main>
+                    {/* TopBar stays fixed width because the parent is locked */}
+                    <TopBar />
+
+                    {/* 3. Main Content Area: Passes the remaining space to the page */}
+                    <main className="flex-1 overflow-y-auto bg-[hsl(var(--bg))]">
+                      {children}
+                    </main>
+                  </div>
                 </div>
-              </div>
+              </SearchProvider>
             </UploadProvider>
           </QueryProvider>
         </AuthProvider>
