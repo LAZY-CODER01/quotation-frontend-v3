@@ -78,7 +78,7 @@ export default function Sidebar() {
                         active={pathname === '/' && !searchParams.get("view")}
                         collapsed={isCollapsed}
                     />
-
+                  {user?.role === 'USER' && (
                     <SidebarItem
                         icon={<UsersIcon size={18} />}
                         label="My Profile"
@@ -86,7 +86,7 @@ export default function Sidebar() {
                         active={pathname === '/profile'}
                         collapsed={isCollapsed}
                     />
-
+                  )}
                     {/* Admin Section - Only visible to Admins */}
                     {isMounted && user?.role === 'ADMIN' && (
                         <>
