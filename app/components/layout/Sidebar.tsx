@@ -3,7 +3,7 @@
 import SidebarItem from "./SidebarItem";
 import {
     Ticket, LogOut, ClipboardCheck, Mail,
-    Users as UsersIcon, Monitor, ChevronLeft, ChevronRight
+    Users as UsersIcon, Monitor, ChevronLeft, ChevronRight, Building
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext"; // Adjust path as needed
@@ -78,15 +78,15 @@ export default function Sidebar() {
                         active={pathname === '/' && !searchParams.get("view")}
                         collapsed={isCollapsed}
                     />
-                  {user?.role === 'USER' && (
-                    <SidebarItem
-                        icon={<UsersIcon size={18} />}
-                        label="My Profile"
-                        onClick={() => router.push('/profile')}
-                        active={pathname === '/profile'}
-                        collapsed={isCollapsed}
-                    />
-                  )}
+                    {user?.role === 'USER' && (
+                        <SidebarItem
+                            icon={<UsersIcon size={18} />}
+                            label="My Profile"
+                            onClick={() => router.push('/profile')}
+                            active={pathname === '/profile'}
+                            collapsed={isCollapsed}
+                        />
+                    )}
                     {/* Admin Section - Only visible to Admins */}
                     {isMounted && user?.role === 'ADMIN' && (
                         <>
@@ -102,6 +102,22 @@ export default function Sidebar() {
                                 label="Ticket Monitor"
                                 onClick={() => router.push('/admin?view=monitor')}
                                 active={isActive('/admin', 'monitor')}
+                                collapsed={isCollapsed}
+                            />
+
+                            <SidebarItem
+                                icon={<UsersIcon size={18} />}
+                                label="Employees"
+                                onClick={() => router.push('/admin/employees')}
+                                active={pathname === '/admin/employees'}
+                                collapsed={isCollapsed}
+                            />
+
+                            <SidebarItem
+                                icon={<Building size={18} />}
+                                label="Clients"
+                                onClick={() => router.push('/admin/clients')}
+                                active={pathname === '/admin/clients'}
                                 collapsed={isCollapsed}
                             />
 
