@@ -4,6 +4,7 @@
 import { X, Filter, DollarSign, Calendar, Hash, Mail, Building, User } from "lucide-react";
 import { useState } from "react";
 import { FilterState, INITIAL_FILTERS } from "../../../types/filters";
+import { useAuth } from "../../../context/AuthContext";
 
 interface FilterSidebarProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface FilterSidebarProps {
 }
 
 export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply }: FilterSidebarProps) {
+  const { allUsers } = useAuth();
   const [localFilters, setLocalFilters] = useState<FilterState>(currentFilters);
 
   // Helper to handle simple text/select changes
@@ -146,13 +148,27 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
              </div>
            </div> */}
 
-          <InputGroup
-            label="Assigned Employee"
-            icon={<User size={14} />}
-            placeholder="Search employee name..."
-            value={localFilters.assignedEmployeeName}
-            onChange={(v: string) => handleChange('assignedEmployeeName', v)}
-          />
+          <div>
+            <label className="text-xs text-gray-400 mb-1.5 block">Assigned Employee</label>
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 text-gray-500" size={14} />
+              <select
+                value={localFilters.assignedEmployeeName}
+                onChange={(e) => handleChange('assignedEmployeeName', e.target.value)}
+                className="w-full pl-9 bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none appearance-none"
+              >
+                <option value="">All Employees</option>
+                {allUsers.map((u: any) => (
+                  <option key={u.id} value={u.username}>
+                    {u.username}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 5. Inputs (Email, Ticket #, Quotation) */}

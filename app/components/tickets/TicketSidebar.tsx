@@ -218,6 +218,7 @@ export default function TicketSidebar({
       case 'ORDER_CONFIRMED': return { label: 'Order Confirmed', color: 'bg-purple-500', icon: <ShoppingBag size={14} /> };
       case 'ORDER_COMPLETED': return { label: 'Order Completed', color: 'bg-emerald-500', icon: <Truck size={14} /> };
       case 'COMPLETION_REQUESTED': return { label: 'Completion Requested', color: 'bg-orange-500', icon: <AlertTriangle size={14} /> };
+      case 'CLOSURE_REQUESTED': return { label: 'Closure Requested', color: 'bg-red-400', icon: <XCircle size={14} /> };
       case 'CLOSED': return { label: 'Closed', color: 'bg-red-500', icon: <XCircle size={14} /> };
       default: return { label: 'Inbox', color: 'bg-indigo-500', icon: <CheckCircle2 size={14} /> };
     }
@@ -353,7 +354,7 @@ export default function TicketSidebar({
     ? ticket.cpo_files[ticket.cpo_files.length - 1]
     : null;
 
-const dbqId = latestQuotation?.name?.substring(0, 11);
+  const dbqId = latestQuotation?.name?.substring(0, 11);
   const poId = latestCPO?.name;
 
   return (
@@ -535,13 +536,21 @@ const dbqId = latestQuotation?.name?.substring(0, 11);
                     )}
                   </>
                 ) : (
-                  currentStatus !== 'COMPLETION_REQUESTED' && currentStatus !== 'CLOSED' && currentStatus !== 'ORDER_COMPLETED' && (
-                    <button
-                      onClick={() => handleStatusChange('COMPLETION_REQUESTED')}
-                      className="w-full bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
-                    >
-                      <Truck size={12} /> Request Completion
-                    </button>
+                  currentStatus !== 'COMPLETION_REQUESTED' && currentStatus !== 'CLOSURE_REQUESTED' && currentStatus !== 'CLOSED' && currentStatus !== 'ORDER_COMPLETED' && (
+                    <div className="flex gap-2 w-full">
+                      <button
+                        onClick={() => handleStatusChange('COMPLETION_REQUESTED')}
+                        className="flex-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <Truck size={12} /> Request Completion
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange('CLOSURE_REQUESTED')}
+                        className="flex-1 bg-gray-500/10 border border-gray-500/20 text-gray-400 hover:bg-gray-500/20 text-[10px] font-bold py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <XCircle size={12} /> Request Closure
+                      </button>
+                    </div>
                   )
                 )}
               </div>
