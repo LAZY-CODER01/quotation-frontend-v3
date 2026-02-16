@@ -95,7 +95,10 @@ export default function UserManagement() {
         try {
             const payload = {
                 ...userForm,
-                employee_code: userForm.employee_code.trim() || undefined // Send undefined if empty to let backend auto-generate
+                // If code is just "DBSQ" or empty, send undefined to let backend auto-generate
+                employee_code: (userForm.employee_code && userForm.employee_code !== 'DBSQ')
+                    ? userForm.employee_code.trim()
+                    : undefined
             };
 
             const response = await api.post("/admin/users", payload);
@@ -149,7 +152,9 @@ export default function UserManagement() {
             if (editForm.password) payload.password = editForm.password;
 
             // Include employee_code for everyone (if provided)
-            if (editForm.employee_code) payload.employee_code = editForm.employee_code;
+            if (editForm.employee_code && editForm.employee_code !== 'DBSQ') {
+                payload.employee_code = editForm.employee_code;
+            }
 
             // Only Admin can send role
             if (currentUser?.role === 'ADMIN') {
@@ -177,7 +182,7 @@ export default function UserManagement() {
             username: user.username,
             password: "", // Don't show hash
             role: user.role,
-            employee_code: user.employee_code || ""
+            employee_code: user.employee_code || "DBSQ"
         });
         setError("");
         setSuccessMsg("");
@@ -215,13 +220,18 @@ export default function UserManagement() {
                             <label className="text-xs font-medium text-gray-400 flex items-center gap-1.5">
                                 <Hash size={12} /> Employee Code (Opt)
                             </label>
-                            <input
-                                type="text"
-                                placeholder="DBSQ-XXX"
-                                className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
-                                value={userForm.employee_code}
-                                onChange={e => setUserForm({ ...userForm, employee_code: e.target.value })}
-                            />
+                            <div className="flex">
+                                <span className="inline-flex items-center px-3 py-2 text-sm text-gray-400 bg-white/5 border border-r-0 border-white/10 rounded-l-lg select-none">
+                                    DBSQ
+                                </span>
+                                <input
+                                    type="text"
+                                    placeholder="XXX"
+                                    className="w-full bg-[#0F1115] border border-white/10 rounded-r-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
+                                    value={userForm.employee_code.startsWith('DBSQ') ? userForm.employee_code.slice(4) : userForm.employee_code}
+                                    onChange={e => setUserForm({ ...userForm, employee_code: 'DBSQ' + e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         {/* Username */}
@@ -414,12 +424,18 @@ export default function UserManagement() {
                             {/* Employee Code */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-gray-400">Employee Code</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-[#0F1115] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
-                                    value={editForm.employee_code}
-                                    onChange={e => setEditForm({ ...editForm, employee_code: e.target.value })}
-                                />
+                                <div className="flex">
+                                    <span className="inline-flex items-center px-3 py-2 text-sm text-gray-400 bg-white/5 border border-r-0 border-white/10 rounded-l-lg select-none">
+                                        DBSQ
+                                    </span>
+                                    <input
+                                        type="text"
+                                        placeholder="XXX"
+                                        className="w-full bg-[#0F1115] border border-white/10 rounded-r-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50"
+                                        value={editForm.employee_code.startsWith('DBSQ') ? editForm.employee_code.slice(4) : editForm.employee_code}
+                                        onChange={e => setEditForm({ ...editForm, employee_code: 'DBSQ' + e.target.value })}
+                                    />
+                                </div>
                             </div>
 
                             {/* Admin Only Fields */}

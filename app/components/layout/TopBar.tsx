@@ -42,7 +42,7 @@ export default function TopBar() {
     };
 
     return (
-        <header className="flex w-full items-center justify-between border-b bg-[hsl(var(--bg))]/80 backdrop-blur-xl px-6 py-4">
+        <header className="flex w-full items-center justify-between border-b bg-[#0F1115] backdrop-blur-xl px-6 py-4">
             {/* Left: Search & Filters */}
             <div className="flex items-center gap-4">
                 <SearchInput />

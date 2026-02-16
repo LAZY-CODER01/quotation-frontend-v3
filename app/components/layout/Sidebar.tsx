@@ -40,7 +40,7 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r bg-[rgb(var(--panel))] flex flex-col h-full transition-all duration-300 ease-in-out`}>
+        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r bg-[#0F1115] flex flex-col h-full transition-all duration-300 ease-in-out`}>
             <div className="p-4 flex-1 flex flex-col items-center w-full">
                 {/* Logo Section */}
                 <div className={`mb-6 flex items-center gap-3 px-2 ${isCollapsed ? 'justify-center' : ''}`}>

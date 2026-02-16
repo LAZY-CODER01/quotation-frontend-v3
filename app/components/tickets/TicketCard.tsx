@@ -40,7 +40,7 @@ export default function TicketCard({ data }: TicketCardProps) {
     <div
       className={`
         group relative flex cursor-pointer flex-col gap-1 rounded-xl p-3 transition-all duration-200
-        bg-[rgb(var(--panel))] hover:shadow-lg 
+       bg-[#0F1115] hover:shadow-lg 
         
         ${isUrgent
           ? 'border border-l-red-500 border-l-4 hover:border-red-500 hover:shadow-red-500/10 hover:bg-red-500/5'

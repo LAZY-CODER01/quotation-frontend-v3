@@ -68,10 +68,10 @@ export default function TicketColumn({
   }, [tickets]);
 
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))] border border-[rgb(var(--border))] shadow-sm">
+    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-[#0F1115] border border-[rgb(var(--border))] shadow-sm">
 
       {/* Header Area */}
-      <div className="p-4 pb-2 sticky top-0 z-10 bg-[rgb(var(--panel))]">
+      <div className="p-4 pb-2 sticky top-0 z-10 bg-[#0F1115]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className={`h-2.5 w-2.5 rounded-full ${colorMap[color]}`} />
