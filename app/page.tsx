@@ -182,7 +182,7 @@ export default function DashboardPage() {
   // --- Render ---
 
   return (
-    <div className="relative h-full w-full bg-[#0F1115]">
+    <div className="relative h-full w-full ">
 
       {/* Global Filter Sidebar (Always mounted, visibility controlled by prop) */}
       <FilterSidebar
@@ -213,16 +213,16 @@ export default function DashboardPage() {
       ) : (
         <div className="flex flex-col h-full"> {/* Changed to flex-col to stack Header + Board */}
 
-          <div className="flex-none px-6 pt-6 pb-2 flex justify-between items-center bg-black">
-            <h1 className="text-xl font-bold text-white">Tickets</h1>
+          <div className="flex-none px-6 pt-6 pb-2 flex justify-between items-center bg-[rgb(var(--primary))]">
+            <h1 className="text-xl font-bold text-[rgb(var(--text-primary))]">Tickets</h1>
 
             <div className="flex items-center gap-3">
               {/* ✅ FIXED: "Load Older" opens Modal */}
               <button
                 onClick={() => setIsDateModalOpen(true)}
-                className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:text-white hover:border-zinc-600 disabled:opacity-50"
+                className="group flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-zinc-800 bg-[rgb(var(--secondary))] text-[rgb(var(--text-primary))] hover:text-white hover:border-zinc-600 disabled:opacity-50"
               >
-                <Clock size={16} className="group-hover:text-emerald-400 transition-colors" />
+                <Clock size={16} className="group-hover:text-[rgb(var(--text-primary))] transition-colors " />
                 {"Load Older"}
               </button>
 
@@ -231,10 +231,10 @@ export default function DashboardPage() {
               <button
                 onClick={() => setIsFilterOpen(true)}
                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border
+                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all border text-[rgb(var(--text-primary))]
                   ${isFilterOpen || JSON.stringify(filters) !== JSON.stringify(INITIAL_FILTERS)
-                    ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
-                    : 'bg-[rgb(var(--panel))] border-[rgb(var(--border))] text-gray-300 hover:text-white hover:border-emerald-500'
+                    ? 'bg-emerald-500/10 border-emerald-500/50 text-[rgb(var(--text-primary))]'
+                    : 'bg-[rgb(var(--panel))] border-[rgb(var(--border))] text-[rgb(var(--text-primary))] hover:text-[rgb(var(--text-primary))] hover:border-emerald-500'
                   }
                 `}
               >
@@ -253,8 +253,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Main Board Area */}
-          <div className="flex-1 w-full overflow-x-auto overflow-y-hidden px-6 pb-6 bg-black">
-            <div className="h-full min-w-max bg-black">
+          <div className="flex-1 w-full overflow-x-auto overflow-y-hidden px-6 pb-6 bg-[rgb(var(--bg-primary))]">
+            <div className="h-full min-w-max bg-[rgb(var(--bg-primary))]">
               <TicketsBoard
                 onTicketClick={setSelectedTicket}
                 activeFilters={filters}

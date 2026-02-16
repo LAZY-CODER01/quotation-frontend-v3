@@ -4,6 +4,7 @@ import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import { AuthProvider } from "../context/AuthContext";
 import QueryProvider from "./providers";
+import ThemeProvider from "./providers/ThemeProvider";
 
 export const metadata = {
   title: "D-BEST ERP",
@@ -20,35 +21,35 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-[hsl(var(--bg))] text-[rgb(var(--text))]" style={{
-        fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
-      }}>
-        <AuthProvider>
-          <QueryProvider>
-            <UploadProvider>
-              <SearchProvider>
-                {/* 1. Screen Container: Locks the app to the viewport size */}
-                <div className="flex h-screen w-screen overflow-hidden">
-                  <Suspense fallback={<div className="w-64 bg-[rgb(13,15,19)] border-r h-full shrink-0" />}>
-                    <Sidebar />
-                  </Suspense>
+      <body className="bg-[rgb(var(--bg-primary))] text-[rgb(var(--text-primary))]">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <AuthProvider>
+            <QueryProvider>
+              <UploadProvider>
+                <SearchProvider>
+                  {/* 1. Screen Container: Locks the app to the viewport size */}
+                  <div className="flex h-screen w-screen overflow-hidden">
+                    <Suspense fallback={<div className="w-64 bg-[rgb(13,15,19)] border-r h-full shrink-0" />}>
+                      <Sidebar />
+                    </Suspense>
 
 
-                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="flex flex-1 flex-col overflow-hidden">
 
-                    {/* TopBar stays fixed width because the parent is locked */}
-                    <TopBar />
+                      {/* TopBar stays fixed width because the parent is locked */}
+                      <TopBar />
 
-                    {/* 3. Main Content Area: Passes the remaining space to the page */}
-                    <main className="flex-1 overflow-y-auto bg-[hsl(var(--bg))]">
-                      {children}
-                    </main>
+                      {/* 3. Main Content Area: Passes the remaining space to the page */}
+                      <main className="flex-1 overflow-y-auto bg-[rgb(var(--bg-primary))]">
+                        {children}
+                      </main>
+                    </div>
                   </div>
-                </div>
-              </SearchProvider>
-            </UploadProvider>
-          </QueryProvider>
-        </AuthProvider>
+                </SearchProvider>
+              </UploadProvider>
+            </QueryProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

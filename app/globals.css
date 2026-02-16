@@ -17,32 +17,107 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgb(100 116 139);
   border-radius: 4px;
 }
 
+.dark *::-webkit-scrollbar-thumb {
+  background: rgb(51 65 85);
+}
+
 *::-webkit-scrollbar-thumb:hover {
-  background: #18181b;
+  background: rgb(71 85 105);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background: rgb(24 24 27);
 }
 
 /* Design tokens for light & dark themes */
 :root {
   /* Page background (used with hsl()) */
-  --bg: 210 40% 98%;
+  --bg: 210 20% 96%;
+  /* Softer off-white background */
 
-  /* Panel / surface background (used with rgb()) */
+  /* Panel / surface backgrounds (used with rgb()) */
+  --bg-primary: 249 250 251;
+  /* Main panels - soft off-white */
+  --bg-secondary: 243 244 246;
+  /* Secondary surfaces - light gray */
+  --bg-tertiary: 237 239 242;
+  /* Tertiary surfaces (inputs, etc) - slightly darker */
+
+  /* Text colors (used with rgb()) */
+  --text-primary: 15 23 42;
+  /* Primary text */
+  --text-secondary: 71 85 105;
+  /* Secondary/muted text - darker for better visibility */
+  --text-tertiary: 100 116 139;
+  /* Tertiary/disabled text - darker for better visibility */
+
+  /* Border colors (used with rgb()) */
+  --border-primary: 100 116 139;
+  /* Primary borders - Slate-500 */
+  --border-secondary: 71 85 105;
+  /* Secondary borders - Slate-600 */
+
+  /* Hover states (used with rgb()) */
+  --hover-bg: 226 232 240;
+  /* Hover background - darker for better text visibility */
+  --hover-border: 100 116 139;
+  /* Hover border - Slate-500 */
+
+  /* Status Colors (used with rgb()) */
+  --color-emerald: 5 150 105;
+  /* Emerald-600 */
+  --color-blue: 37 99 235;
+  /* Blue-600 */
+
+  /* Legacy support */
   --panel: 255 255 255;
-
-  /* Primary text & muted text (used with rgb()) */
   --text: 15 23 42;
-  --muted: 100 116 139;
-
-  /* Border color (used with rgb()) */
-  --border: 226 232 240;
+  --muted: 71 85 105;
+  --border: 100 116 139;
 }
 
 .dark {
   --bg: 222.2 84% 4.9%;
+
+  /* Panel / surface backgrounds (used with rgb()) */
+  --bg-primary: 15 17 21;
+  /* Main panels - #0F1115 */
+  --bg-secondary: 24 26 31;
+  /* Secondary surfaces - #181A1F */
+  --bg-tertiary: 10 11 13;
+  /* Tertiary surfaces - #0A0B0D */
+
+  /* Text colors (used with rgb()) */
+  --text-primary: 255 255 255;
+  /* Primary text - white */
+  --text-secondary: 156 163 175;
+  /* Secondary/muted text - gray-400 */
+  --text-tertiary: 107 114 128;
+  /* Tertiary/disabled text - gray-500 */
+
+  /* Border colors (used with rgb()) */
+  --border-primary: 255 255 255 / 0.1;
+  /* Primary borders - white/10 */
+  --border-secondary: 255 255 255 / 0.05;
+  /* Secondary borders - white/5 */
+
+  /* Hover states (used with rgb()) */
+  --hover-bg: 255 255 255 / 0.05;
+  /* Hover background - white/5 */
+  --hover-border: 255 255 255 / 0.2;
+  /* Hover border - white/20 */
+
+  /* Status Colors (used with rgb()) */
+  --color-emerald: 52 211 153;
+  /* Emerald-400 */
+  --color-blue: 96 165 250;
+  /* Blue-400 */
+
+  /* Legacy support */
   --panel: 17 24 39;
   --text: 226 232 240;
   --muted: 148 163 184;
@@ -51,9 +126,29 @@
 
 /* Base typography & border color */
 * {
-  @apply border-[rgb(var(--border))];
+  border-color: rgb(var(--border));
   font-family: ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+/* Date input styling for better visibility in both themes */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(var(--date-picker-invert, 0));
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Light theme date picker icon */
+:root input[type="date"]::-webkit-calendar-picker-indicator {
+  --date-picker-invert: 0;
+}
+
+/* Dark theme date picker icon */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  --date-picker-invert: 1;
+}

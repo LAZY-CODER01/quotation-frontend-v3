@@ -17,10 +17,10 @@ interface TicketColumnProps {
 }
 
 const colorMap = {
-  blue: "bg-blue-500",
-  green: "bg-green-500",
+  blue: "bg-[rgb(var(--color-blue))]",
+  green: "bg-[rgb(var(--color-emerald))]",
   yellow: "bg-yellow-500",
-  emerald: "bg-emerald-500",
+  emerald: "bg-[rgb(var(--color-emerald))]",
   purple: "bg-purple-500",
   red: "bg-red-500",
 };
@@ -68,29 +68,29 @@ export default function TicketColumn({
   }, [tickets]);
 
   return (
-    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-[#0F1115] border border-[rgb(var(--border))] shadow-sm">
+    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--bg-primary))] border border-[rgb(var(--border-primary))] shadow-sm">
 
       {/* Header Area */}
-      <div className="p-4 pb-2 sticky top-0 z-10 bg-[#0F1115]">
+      <div className="p-4 pb-2 sticky top-0 z-10 bg-[rgb(var(--bg-primary))]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className={`h-2.5 w-2.5 rounded-full ${colorMap[color]}`} />
-            <h3 className="font-semibold">{title}</h3>
+            <h3 className="font-semibold text-[rgb(var(--text-primary))]">{title}</h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[hsl(var(--bg))] px-1.5 text-xs text-[rgb(var(--muted))] shadow-inner">
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[rgb(var(--bg-secondary))] px-1.5 text-xs text-[rgb(var(--text-secondary))] shadow-inner">
               {count}
             </span>
             <Link
               href={`/tickets/status/${slug}`}
               target="_blank"
-              className="text-gray-500 hover:text-white transition-colors"
+              className="text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"
             >
               <ExternalLink size={14} />
             </Link>
           </div>
         </div>
-        <div className="mt-2 h-[1px] w-full bg-[rgb(var(--border))]" />
+        <div className="mt-2 h-[1px] w-full bg-[rgb(var(--border-primary))]" />
         {/* Optional: Keep global column date or remove if redundant */}
         {/* <p className="mt-2 text-center text-xs text-[rgb(var(--muted))]">{date}</p> */}
       </div>
@@ -105,11 +105,11 @@ export default function TicketColumn({
 
                 {/* 2. Date Separator Line */}
                 <div className="flex items-center gap-2 py-2 opacity-70">
-                  <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
-                  <span className="text-[10px] font-medium text-[rgb(var(--muted))] uppercase tracking-wider whitespace-nowrap">
+                  <div className="h-[1px] flex-1 bg-[rgb(var(--border-primary))]" />
+                  <span className="text-[10px] font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider whitespace-nowrap">
                     {getUaeFriendlyDayLabel(dateKey)}
                   </span>
-                  <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
+                  <div className="h-[1px] flex-1 bg-[rgb(var(--border-primary))]" />
                 </div>
 
                 {/* Tickets for this date */}
@@ -125,7 +125,7 @@ export default function TicketColumn({
               </div>
             ))
           ) : (
-            <div className="text-center text-xs text-zinc-500 py-4">No tickets</div>
+            <div className="text-center text-xs text-[rgb(var(--text-tertiary))] py-4">No tickets</div>
           )}
 
         </div>

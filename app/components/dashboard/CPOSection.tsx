@@ -31,7 +31,7 @@ const CPORow = ({
   };
 
   return (
-    <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
+    <div className="group flex items-center justify-between p-3 bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-secondary))] hover:border-[rgb(var(--hover-border))] rounded-lg transition-all">
 
       {/* File Info */}
       <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -39,14 +39,14 @@ const CPORow = ({
           <FileCheck size={16} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
+          <p className="text-sm text-[rgb(var(--text-primary))] truncate pr-4" title={file.name}>
             {/* ✅ FIX: Show file name as primary */}
             {file.name}
           </p>
-          <p className="text-[10px] text-gray-500 truncate" title={file.reference_id}>
+          <p className="text-[10px] text-[rgb(var(--text-tertiary))] truncate" title={file.reference_id}>
             {file.reference_id || "No Ref ID"}
           </p>
-          <div className="flex items-center gap-2 text-[10px] text-gray-500">
+          <div className="flex items-center gap-2 text-[10px] text-[rgb(var(--text-tertiary))]">
             <span>
               {file.uploaded_at
                 ? formatUaeDateTime(file.uploaded_at)
@@ -61,7 +61,7 @@ const CPORow = ({
 
         {/* PO Number Badge */}
         {file.po_number && (
-          <div className="px-2 py-1 bg-[#0A0B0D] border border-white/10 rounded text-[10px] font-mono text-gray-400" title="PO Number">
+          <div className="px-2 py-1 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded text-[10px] font-mono text-[rgb(var(--text-secondary))]" title="PO Number">
             PO: {file.po_number}
           </div>
         )}
@@ -79,7 +79,7 @@ const CPORow = ({
           target="_blank"
           rel="noopener noreferrer"
           download
-          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded border border-white/5 hover:border-white/10 transition-all"
+          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-[rgb(var(--text-secondary))] bg-[rgb(var(--bg-tertiary))] hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))] rounded border border-[rgb(var(--border-secondary))] hover:border-[rgb(var(--hover-border))] transition-all"
         >
           <Download size={12} />
           <span>Download</span>
@@ -90,7 +90,7 @@ const CPORow = ({
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="p-1.5 text-[rgb(var(--text-tertiary))] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
             title="Delete File (Admin)"
           >
             {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -257,7 +257,7 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
   };
 
   return (
-    <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
+    <div className="bg-[rgb(var(--bg-primary))] rounded-lg p-1 space-y-4">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -286,7 +286,7 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
             </div>
             <button
               onClick={handleCancel}
-              className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-full text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"
             >
               <X size={16} />
             </button>
@@ -297,8 +297,8 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
 
             {/* PE Number Input skipped previously */}
 
-            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2">
-              <span className="text-xs text-gray-400 italic">
+            <div className="flex-1 flex items-center gap-2 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg px-3 py-2">
+              <span className="text-xs text-[rgb(var(--text-secondary))] italic">
                 Price will be auto-extracted...
               </span>
             </div>
@@ -316,8 +316,8 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
         </div>
       ) : (
         // --- DEFAULT UPLOAD BUTTON ---
-        <div className="flex items-center justify-between p-3 bg-[#181A1F] border border-dashed border-white/10 rounded-lg">
-          <p className="text-xs text-gray-500 font-mono hidden sm:block">
+        <div className="flex items-center justify-between p-3 bg-[rgb(var(--bg-secondary))] border border-dashed border-[rgb(var(--border-primary))] rounded-lg">
+          <p className="text-xs text-[rgb(var(--text-tertiary))] font-mono hidden sm:block">
             Upload confirmed CPO (PDF/Img)
           </p>
           <div className="w-full sm:w-auto">
@@ -329,7 +329,7 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[#22252B] hover:bg-[#2A2E35] border border-white/10 rounded-lg text-xs text-gray-300 transition-all hover:text-white hover:border-white/20"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[rgb(var(--bg-secondary))] hover:bg-[rgb(var(--hover-bg))] border border-[rgb(var(--border-primary))] rounded-lg text-xs text-[rgb(var(--text-secondary))] transition-all hover:text-[rgb(var(--text-primary))] hover:border-[rgb(var(--hover-border))]"
             >
               <Upload size={14} />
               <span>Select CPO</span>
@@ -354,7 +354,7 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
           })
         ) : (
           !pendingFile && (
-            <div className="py-4 text-center text-xs text-gray-600 italic">
+            <div className="py-4 text-center text-xs text-[rgb(var(--text-tertiary))] italic">
               No LPO files uploaded yet.
             </div>
           )

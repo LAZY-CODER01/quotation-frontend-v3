@@ -360,14 +360,14 @@ export default function TicketSidebar({
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-      <div className="fixed top-0 right-0 h-full w-[700px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-gray-300">
+      <div className="fixed top-0 right-0 h-full w-[700px] bg-[rgb(var(--bg-primary))] border-l border-[rgb(var(--border-primary))] shadow-2xl z-50 transform transition-transform duration-300 flex flex-col text-sm text-[rgb(var(--text-secondary))]">
 
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[rgb(var(--border-primary))]">
           <div className="flex items-center gap-2">
 
             {/* Ticket ID */}
-            <span className="font-mono text-[12px] font-bold text-gray-400 bg-white/5 px-2 py-1 rounded border border-white/10">
+            <span className="font-mono text-[12px] font-bold text-[rgb(var(--text-secondary))] bg-[rgb(var(--bg-tertiary))] px-2 py-1 rounded border border-[rgb(var(--border-primary))]">
               {ticket.ticket_number || `TKT-${ticket.id}`}
             </span>
 
@@ -395,16 +395,16 @@ export default function TicketSidebar({
               <button
                 onClick={() => setIsPriorityOpen(!isPriorityOpen)}
                 disabled={isUpdatingPriority}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all ${isUrgent ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20" : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"}`}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all ${isUrgent ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20" : "bg-[rgb(var(--bg-tertiary))] border-[rgb(var(--border-primary))] text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))]"}`}
               >
                 {isUpdatingPriority ? <Loader2 size={10} className="animate-spin" /> : (isUrgent && <AlertTriangle size={10} />)}
                 <span>{currentPriority === "URGENT" ? "Urgent" : "Normal"}</span>
                 {!isUpdatingPriority && <ChevronDown size={12} className="opacity-50" />}
               </button>
               {isPriorityOpen && (
-                <div className="absolute top-full left-0 mt-1 w-32 bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-50">
+                <div className="absolute top-full left-0 mt-1 w-32 bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-lg shadow-xl overflow-hidden z-50">
                   <div className="p-1">
-                    <button onClick={() => handlePriorityChange("NORMAL")} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-gray-400" /> Normal</button>
+                    <button onClick={() => handlePriorityChange("NORMAL")} className="w-full text-left px-3 py-2 text-xs text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))] rounded flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--text-secondary))]" /> Normal</button>
                     <button onClick={() => handlePriorityChange("URGENT")} className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 rounded flex items-center gap-2"><AlertTriangle size={10} /> Urgent</button>
                   </div>
                 </div>
@@ -414,12 +414,12 @@ export default function TicketSidebar({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${isEditing ? "text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20" : "text-gray-500 hover:text-white"}`}
+              className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${isEditing ? "text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20" : "text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]"}`}
             >
               {isEditing ? <CheckCircle2 size={14} /> : <FileText size={14} />}
               {isEditing ? "Editing Info" : "Edit Info"}
             </button>
-            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors"><X size={18} /></button>
+            <button onClick={onClose} className="text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"><X size={18} /></button>
           </div>
         </div>
 
@@ -429,17 +429,17 @@ export default function TicketSidebar({
             {isEditing ? (
               <div className="space-y-4 bg-white/5 p-4 rounded-xl border border-white/10">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Subject</label>
+                  <label className="text-xs text-[rgb(var(--text-tertiary))] mb-1 block">Subject</label>
                   <input
                     type="text"
                     value={editForm.subject}
                     onChange={(e) => setEditForm(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full bg-[#0F1115] border border-white/10 rounded px-3 py-2 text-white text-sm focus:border-emerald-500/50 focus:outline-none"
+                    className="w-full bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded px-3 py-2 text-[rgb(var(--text-primary))] text-sm focus:border-emerald-500/50 focus:outline-none"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Sender Name</label>
+                    <label className="text-xs text-[rgb(var(--text-tertiary))] mb-1 block">Sender Name</label>
                     <input
                       type="text"
                       value={editForm.senderName}
@@ -448,7 +448,7 @@ export default function TicketSidebar({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Sender Email</label>
+                    <label className="text-xs text-[rgb(var(--text-tertiary))] mb-1 block">Sender Email</label>
                     <input
                       type="text"
                       value={editForm.senderEmail}
@@ -458,7 +458,7 @@ export default function TicketSidebar({
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Company Name</label>
+                  <label className="text-xs text-[rgb(var(--text-tertiary))] mb-1 block">Company Name</label>
                   <input
                     type="text"
                     value={editForm.companyName}
@@ -468,18 +468,18 @@ export default function TicketSidebar({
                   />
                 </div>
                 <div className="flex justify-end gap-2 pt-2 border-t border-white/5 mt-2">
-                  <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancel</button>
+                  <button onClick={() => setIsEditing(false)} className="px-3 py-1.5 rounded text-xs text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] hover:bg-[rgb(var(--hover-bg))] transition-colors">Cancel</button>
                   <button onClick={handleSaveDetails} className="px-3 py-1.5 rounded bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">Save Changes</button>
                 </div>
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-semibold text-white mb-6 leading-snug">{displayTicket.subject || "No Subject"}</h2>
+                <h2 className="text-xl font-semibold text-[rgb(var(--text-primary))] mb-6 leading-snug">{displayTicket.subject || "No Subject"}</h2>
                 <div className="grid grid-cols-2 gap-y-4 gap-x-2">
-                  <div className="flex items-center gap-3 text-gray-400"><User size={16} /><span className="truncate">{senderName}</span></div>
-                  <div className="flex items-center gap-3 text-gray-400"><Mail size={16} /><span className="truncate">{senderEmail}</span></div>
-                  <div className="flex items-center gap-3 text-gray-400"><Building size={16} /><span>{companyName}</span></div>
-                  <div className="flex items-center gap-3 text-gray-400"><Clock size={16} /><span>{formattedDate}</span></div>
+                  <div className="flex items-center gap-3 text-[rgb(var(--text-secondary))]"><User size={16} /><span className="truncate">{senderName}</span></div>
+                  <div className="flex items-center gap-3 text-[rgb(var(--text-secondary))]"><Mail size={16} /><span className="truncate">{senderEmail}</span></div>
+                  <div className="flex items-center gap-3 text-[rgb(var(--text-secondary))]"><Building size={16} /><span>{companyName}</span></div>
+                  <div className="flex items-center gap-3 text-[rgb(var(--text-secondary))]"><Clock size={16} /><span>{formattedDate}</span></div>
                 </div>
               </>
             )}
@@ -487,28 +487,28 @@ export default function TicketSidebar({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 relative">
-              <label className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Status</label>
+              <label className="text-[10px] font-bold tracking-wider text-[rgb(var(--text-tertiary))] uppercase">Status</label>
 
               {/* Status Display Button */}
               <button
                 onClick={() => isAdmin && setIsStatusOpen(!isStatusOpen)}
                 disabled={!isAdmin}
                 title={!isAdmin ? "Only Admins can manually change status." : ""}
-                className={`w-full flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 transition-colors ${isAdmin ? "hover:border-white/20" : "opacity-50 cursor-not-allowed"}`}
+                className={`w-full flex items-center justify-between bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-lg px-3 py-2.5 transition-colors ${isAdmin ? "hover:border-[rgb(var(--hover-border))]" : "opacity-50 cursor-not-allowed"}`}
               >
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${statusConfig.color} shadow-[0_0_8px_rgba(255,255,255,0.3)]`}></div>
-                  <span className="text-white text-xs">{statusConfig.label}</span>
+                  <span className="text-[rgb(var(--text-primary))] text-xs">{statusConfig.label}</span>
                 </div>
-                {isAdmin && <ChevronDown size={14} className="text-gray-500" />}
+                {isAdmin && <ChevronDown size={14} className="text-[rgb(var(--text-tertiary))]" />}
               </button>
 
               {/* Admin Dropdown */}
               {isStatusOpen && isAdmin && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-[#181A1F] border border-white/10 rounded-lg shadow-xl overflow-hidden z-20">
+                <div className="absolute top-full left-0 mt-1 w-full bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-lg shadow-xl overflow-hidden z-20">
                   <div className="p-1 space-y-0.5">
                     {[{ val: 'OPEN', label: 'Inbox', col: 'bg-indigo-500' }, { val: 'SENT', label: 'Sent', col: 'bg-blue-500' }, { val: 'ORDER_CONFIRMED', label: 'Order Confirmed', col: 'bg-purple-500' }, { val: 'ORDER_COMPLETED', label: 'Order Completed', col: 'bg-emerald-500' }, { val: 'CLOSED', label: 'Closed', col: 'bg-red-500' }].map((opt) => (
-                      <button key={opt.val} onClick={() => handleStatusChange(opt.val)} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 rounded flex items-center gap-2"><div className={`w-1.5 h-1.5 rounded-full ${opt.col}`} /> {opt.label}</button>
+                      <button key={opt.val} onClick={() => handleStatusChange(opt.val)} className="w-full text-left px-3 py-2 text-xs text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))] rounded flex items-center gap-2"><div className={`w-1.5 h-1.5 rounded-full ${opt.col}`} /> {opt.label}</button>
                     ))}
                   </div>
                 </div>
@@ -558,32 +558,32 @@ export default function TicketSidebar({
 
             {/* Assigned To Section */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Assigned To</label>
+              <label className="text-[10px] font-bold tracking-wider text-[rgb(var(--text-tertiary))] uppercase">Assigned To</label>
               {isAdmin ? (
                 <div className="relative">
-                  <select value={currentAssignee} onChange={handleAssignChange} className="w-full bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white appearance-none cursor-pointer hover:border-white/20 focus:outline-none focus:border-emerald-500/50">
+                  <select value={currentAssignee} onChange={handleAssignChange} className="w-full bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-lg px-3 py-2.5 text-xs text-[rgb(var(--text-primary))] appearance-none cursor-pointer hover:border-[rgb(var(--hover-border))] focus:outline-none focus:border-emerald-500/50">
                     <option value="">Unassigned</option>
                     {allUsers && Array.isArray(allUsers) && allUsers.map((u: any) => <option key={u.id} value={u.username}>{u.username}</option>)}
                   </select>
-                  <ChevronDown size={14} className="absolute right-3 top-3 text-gray-500 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-3 top-3 text-[rgb(var(--text-tertiary))] pointer-events-none" />
                 </div>
               ) : (
-                <div className="flex items-center justify-between bg-[#181A1F] border border-white/10 rounded-lg px-3 py-2.5 opacity-80">
+                <div className="flex items-center justify-between bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-lg px-3 py-2.5 opacity-80">
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold">{currentAssignee ? currentAssignee.charAt(0).toUpperCase() : "?"}</div>
-                    <span className={`text-xs ${currentAssignee ? "text-gray-200" : "text-gray-500 italic"}`}>{currentAssignee || "Unassigned"}</span>
+                    <span className={`text-xs ${currentAssignee ? "text-[rgb(var(--text-primary))]" : "text-[rgb(var(--text-tertiary))] italic"}`}>{currentAssignee || "Unassigned"}</span>
                   </div>
-                  <span className="text-gray-600 text-[10px]">Read-only</span>
+                  <span className="text-[rgb(var(--text-tertiary))] text-[10px]">Read-only</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="bg-[#181A1F] border border-white/10 rounded-xl p-4 space-y-3">
+          <div className="bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2"><FileText size={18} className="text-gray-400" /><span className="font-medium text-white">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
+              <div className="flex items-center gap-2"><FileText size={18} className="text-[rgb(var(--text-secondary))]" /><span className="font-medium text-[rgb(var(--text-primary))]">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
               <div className="flex gap-2">
-                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"><Download size={12} /> Excel</button>) : <span className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Irrelevant</span>}
+                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"><Download size={12} /> Excel</button>) : <span className="text-[10px] font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-wider">Irrelevant</span>}
                 <button onClick={onEditRequirements} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"><Maximize2 size={14} /> View</button>
               </div>
             </div>
@@ -591,38 +591,38 @@ export default function TicketSidebar({
 
           <div className="space-y-2 border-t border-white/10 pt-4">
             <div className="border-b border-white/5 pb-2">
-              <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              <button onClick={() => toggleSection('files')} className="w-full flex items-center justify-between py-3 hover:text-[rgb(var(--text-primary))] transition-colors group"><div className="flex items-center gap-3 font-medium text-[rgb(var(--text-secondary))] group-hover:text-emerald-400"><FileCheck size={20} className="text-emerald-500" /><span>Quotation Files</span></div>{sections.files ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
               {sections.files && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><QuotationSection ticket={ticket} onFileAdded={(f) => { if (onFileAdded) onFileAdded(f); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileUpdated={(id, amount) => { if (onFileUpdated) onFileUpdated(id, amount); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} isAdmin={isAdmin} /></div>}
             </div>
             <div className="border-b border-white/5 pb-2">
-              <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              <button onClick={() => toggleSection('cpo')} className="w-full flex items-center justify-between py-3 hover:text-[rgb(var(--text-primary))] transition-colors group"><div className="flex items-center gap-3 font-medium text-[rgb(var(--text-secondary))] group-hover:text-emerald-400"><ShoppingCart size={20} className="text-emerald-500" /><span>Customer Purchase Order (CPO)</span></div>{sections.cpo ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
               {sections.cpo && <div className="mt-3 animate-in slide-in-from-top-2 duration-200"><CPOSection ticket={ticket} onFileAdded={(f) => { if (onCPOAdded) onCPOAdded(f); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} onFileDeleted={(id) => { if (onFileDeleted) onFileDeleted(id); if (onUpdate) onUpdate(); setOptimisticTicket(prev => ({ ...(prev || ticket), updated_at: new Date().toISOString() })); }} isAdmin={isAdmin} /></div>}
             </div>
             <div>
-              <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              <button onClick={() => toggleSection('notes')} className="w-full flex items-center justify-between py-3 hover:text-[rgb(var(--text-primary))] transition-colors group"><div className="flex items-center gap-3 font-medium text-[rgb(var(--text-secondary))] group-hover:text-emerald-400"><MessageSquare size={20} className="text-emerald-500" /><span>Internal Notes ({internalNotes.length})</span></div>{sections.notes ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
               {sections.notes && (
                 <div className="mt-2 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                  <div className="space-y-2"><textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="w-full h-20 bg-[#0A0B0D] border border-white/10 rounded-lg p-3 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Add an internal note..." ></textarea><button onClick={handleAddNote} disabled={isSendingNote || !noteText.trim()} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/20">{isSendingNote ? <Loader2 size={16} className="animate-spin " /> : <Send size={16} className="text-emerald-500" />} Add Note</button></div>
+                  <div className="space-y-2"><textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} className="w-full h-20 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-3 text-sm text-[rgb(var(--text-secondary))] placeholder-[rgb(var(--text-tertiary))] focus:outline-none focus:border-emerald-500/50 resize-none" placeholder="Add an internal note..." ></textarea><button onClick={handleAddNote} disabled={isSendingNote || !noteText.trim()} className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 rounded-lg transition-all shadow-lg shadow-emerald-900/20">{isSendingNote ? <Loader2 size={16} className="animate-spin " /> : <Send size={16} className="text-emerald-500" />} Add Note</button></div>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
                     {internalNotes.length > 0 ? (
                       internalNotes.map((note) => (
                         <div
                           key={note.id}
-                          className="bg-[#0A0B0D] border border-white/5 rounded-lg p-3 space-y-1"
+                          className="bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-secondary))] rounded-lg p-3 space-y-1"
                         >
-                          <div className="flex items-center justify-between text-xs text-gray-500">
+                          <div className="flex items-center justify-between text-xs text-[rgb(var(--text-tertiary))]">
                             <span className="font-semibold text-emerald-500">
                               {note.author}
                             </span>
                             <span>{formatUaeDateTime(note.created_at)}</span>
                           </div>
-                          <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                          <p className="text-sm text-[rgb(var(--text-secondary))] whitespace-pre-wrap">
                             {note.text}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center text-xs text-gray-600 italic py-2">
+                      <div className="text-center text-xs text-[rgb(var(--text-tertiary))] italic py-2">
                         No notes yet.
                       </div>
                     )}
@@ -631,27 +631,27 @@ export default function TicketSidebar({
               )}
             </div>
             <div className="border-t border-white/5 pt-2">
-              <button onClick={() => toggleSection('activity')} className="w-full flex items-center justify-between py-3 hover:text-white transition-colors group"><div className="flex items-center gap-3 font-medium text-gray-300 group-hover:text-emerald-400"><History size={18} /><span>Activity Logs ({sortedLogs.length})</span></div>{sections.activity ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
+              <button onClick={() => toggleSection('activity')} className="w-full flex items-center justify-between py-3 hover:text-[rgb(var(--text-primary))] transition-colors group"><div className="flex items-center gap-3 font-medium text-[rgb(var(--text-secondary))] group-hover:text-emerald-400"><History size={18} /><span>Activity Logs ({sortedLogs.length})</span></div>{sections.activity ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</button>
               {sections.activity && (
                 <div className="mt-2 space-y-0 pl-2 max-h-80 overflow-y-auto custom-scrollbar animate-in slide-in-from-top-2 duration-200">
                   {sortedLogs.length > 0 ? (
                     sortedLogs.map((log) => (
                       <div key={log.id} className="relative pl-6 pb-6 border-l border-white/10 last:border-0 last:pb-0 group">
-                        <div className="absolute -left-[9px] top-0 w-5 h-5 rounded-full bg-[#181A1F] border border-white/10 flex items-center justify-center">{getLogIcon(log.action)}</div>
+                        <div className="absolute -left-[9px] top-0 w-5 h-5 rounded-full bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] flex items-center justify-center">{getLogIcon(log.action)}</div>
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-gray-200">
+                            <span className="text-xs font-semibold text-[rgb(var(--text-primary))]">
                               {log.user}
                             </span>
-                            <span className="text-[10px] text-gray-500">
+                            <span className="text-[10px] text-[rgb(var(--text-tertiary))]">
                               {formatUaeTime(log.timestamp)}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-400">{log.description}</p>
+                          <p className="text-xs text-[rgb(var(--text-secondary))]">{log.description}</p>
                         </div>
                       </div>
                     ))
-                  ) : <div className="text-center text-xs text-gray-600 italic py-2">No activity recorded yet.</div>}
+                  ) : <div className="text-center text-xs text-[rgb(var(--text-tertiary))] italic py-2">No activity recorded yet.</div>}
                 </div>
               )}
             </div>

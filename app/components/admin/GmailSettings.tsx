@@ -52,10 +52,10 @@ export default function GmailSettings() {
         }
     };
 
-    if (loading && !status) return <div className="text-gray-400 p-4">Loading Gmail settings...</div>;
+    if (loading && !status) return <div className="text-[rgb(var(--text-secondary))] p-4">Loading Gmail settings...</div>;
 
     return (
-        <div className="bg-[#181A1F] rounded-xl border border-white/10 p-6">
+        <div className="bg-[rgb(var(--bg-secondary))] rounded-xl border border-[rgb(var(--border-primary))] p-6">
             {error && (
                 <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 flex items-center gap-2">
                     <XCircle size={18} /> {error}
@@ -68,8 +68,8 @@ export default function GmailSettings() {
                         <Mail className="w-6 h-6 text-blue-500" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-white">Company Gmail</h2>
-                        <p className="text-sm text-gray-400">Connect the main company account for email monitoring</p>
+                        <h2 className="text-xl font-semibold text-[rgb(var(--text-primary))]">Company Gmail</h2>
+                        <p className="text-sm text-[rgb(var(--text-secondary))]">Connect the main company account for email monitoring</p>
                     </div>
                 </div>
                 {status?.connected ? (
@@ -84,14 +84,14 @@ export default function GmailSettings() {
             </div>
 
             <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-white/5">
+                <div className="flex items-center justify-between p-4 bg-[rgb(var(--bg-primary))] rounded-lg border border-[rgb(var(--border-secondary))]">
                     <div>
-                        <p className="text-sm font-medium text-white">Monitoring Status</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-[rgb(var(--text-primary))]">Monitoring Status</p>
+                        <p className="text-xs text-[rgb(var(--text-tertiary))]">
                             {status?.monitoring ? "Active - Scanning for emails" : "Inactive"}
                         </p>
                     </div>
-                    <button onClick={fetchStatus} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white">
+                    <button onClick={fetchStatus} className="p-2 hover:bg-[rgb(var(--hover-bg))] rounded-full transition-colors text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]">
                         <RotateCw size={16} />
                     </button>
                 </div>
