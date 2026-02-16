@@ -68,17 +68,17 @@ export default function TicketColumn({
   }, [tickets]);
 
   return (
-    <div className="flex h-full  w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))]">
+    <div className="flex h-full w-[280px] shrink-0 flex-col rounded-xl bg-[rgb(var(--panel))] border border-[rgb(var(--border))] shadow-sm">
 
       {/* Header Area */}
-      <div className="p-4 pb-2">
+      <div className="p-4 pb-2 sticky top-0 z-10 bg-[rgb(var(--panel))]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className={`h-2.5 w-2.5 rounded-full ${colorMap[color]}`} />
             <h3 className="font-semibold">{title}</h3>
           </div>
           <div className="flex items-center gap-2">
-            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[hsl(var(--bg))] px-1.5 text-xs text-[rgb(var(--muted))]">
+            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[hsl(var(--bg))] px-1.5 text-xs text-[rgb(var(--muted))] shadow-inner">
               {count}
             </span>
             <Link
@@ -104,7 +104,7 @@ export default function TicketColumn({
               <div key={dateKey} className="flex flex-col gap-3">
 
                 {/* 2. Date Separator Line */}
-                <div className="flex items-center gap-2 py-2 opacity-60">
+                <div className="flex items-center gap-2 py-2 opacity-70">
                   <div className="h-[1px] flex-1 bg-[rgb(var(--border))]" />
                   <span className="text-[10px] font-medium text-[rgb(var(--muted))] uppercase tracking-wider whitespace-nowrap">
                     {getUaeFriendlyDayLabel(dateKey)}

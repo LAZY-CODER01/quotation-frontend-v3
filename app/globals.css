@@ -2,51 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global scrollbar styling */
 * {
   scrollbar-width: thin;
 }
 
-::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 8px;
-  height: 8px; 
+  height: 8px;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent; 
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-
-::-webkit-scrollbar-thumb {
-  background: #334155; 
+*::-webkit-scrollbar-thumb {
+  background: #334155;
   border-radius: 4px;
 }
 
-
-::-webkit-scrollbar-thumb:hover {
-  /* background: rgb(71, 85, 105) */
-    background: rgb(24, 24, 24)
+*::-webkit-scrollbar-thumb:hover {
+  background: #18181b;
 }
+
+/* Design tokens for light & dark themes */
 :root {
---bg: 255 255 255;
---panel: 255 255 255;
---text: 15 23 42;
---muted: 100 116 139;
---border: 226 232 240;
-}
+  /* Page background (used with hsl()) */
+  --bg: 210 40% 98%;
 
+  /* Panel / surface background (used with rgb()) */
+  --panel: 255 255 255;
+
+  /* Primary text & muted text (used with rgb()) */
+  --text: 15 23 42;
+  --muted: 100 116 139;
+
+  /* Border color (used with rgb()) */
+  --border: 226 232 240;
+}
 
 .dark {
---bg: 210 20% 5%;
---panel: 17 20 24;
---text: 226 232 240;
---muted: 148 163 184;
---border: 38 46 52;
+  --bg: 222.2 84% 4.9%;
+  --panel: 17 24 39;
+  --text: 226 232 240;
+  --muted: 148 163 184;
+  --border: 38 46 52;
 }
 
-
+/* Base typography & border color */
 * {
-@apply border-[rgb(var(--border))];
-font-family: ui-sans-serif, system-ui, sans-serif,
+  @apply border-[rgb(var(--border))];
+  font-family: ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
 }
+

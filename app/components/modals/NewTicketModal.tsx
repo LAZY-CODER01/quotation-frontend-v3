@@ -49,15 +49,15 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#181A1F] border border-white/10 rounded-xl shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+            <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
-                    <div className="flex items-center gap-2 text-white font-semibold">
+                <div className="flex items-center justify-between p-4 border-b border-[rgb(var(--border))]">
+                    <div className="flex items-center gap-2 text-[rgb(var(--text))] font-semibold">
                         <Ticket size={18} className="text-emerald-500" />
                         <span>Create New Ticket</span>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] transition-colors">
                         <X size={18} />
                     </button>
                 </div>
@@ -67,20 +67,20 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
 
                     {/* Subject */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Subject</label>
+                        <label className="text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Subject</label>
                         <input
                             type="text"
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
                             placeholder="Enter ticket subject"
-                            className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-zinc-700"
+                            className="w-full bg-[hsl(var(--bg))] border border-[rgb(var(--border))] rounded-lg px-3 py-2.5 text-sm text-[rgb(var(--text))] focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-[rgb(var(--muted))]"
                             required
                         />
                     </div>
 
                     {/* Company Name */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <label className="text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider flex items-center gap-1">
                             <Building size={12} /> Company Name
                         </label>
                         <input
@@ -88,7 +88,7 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
                             placeholder="Enter company name"
-                            className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-zinc-700"
+                            className="w-full bg-[hsl(var(--bg))] border border-[rgb(var(--border))] rounded-lg px-3 py-2.5 text-sm text-[rgb(var(--text))] focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-[rgb(var(--muted))]"
                             required
                         />
                     </div>
@@ -96,7 +96,7 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
                     {/* Sender Details Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                            <label className="text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider flex items-center gap-1">
                                 <User size={12} /> Sender Name
                             </label>
                             <input
@@ -104,12 +104,12 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
                                 value={senderName}
                                 onChange={(e) => setSenderName(e.target.value)}
                                 placeholder="Enter name"
-                                className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-zinc-700"
+                                className="w-full bg-[hsl(var(--bg))] border border-[rgb(var(--border))] rounded-lg px-3 py-2.5 text-sm text-[rgb(var(--text))] focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-[rgb(var(--muted))]"
                                 required
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                            <label className="text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider flex items-center gap-1">
                                 <Mail size={12} /> Sender Email
                             </label>
                             <input
@@ -117,7 +117,7 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
                                 value={senderEmail}
                                 onChange={(e) => setSenderEmail(e.target.value)}
                                 placeholder="Enter email"
-                                className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-zinc-700"
+                                className="w-full bg-[hsl(var(--bg))] border border-[rgb(var(--border))] rounded-lg px-3 py-2.5 text-sm text-[rgb(var(--text))] focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-[rgb(var(--muted))]"
                                 required
                             />
                         </div>
@@ -125,11 +125,11 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
 
                     {/* Priority */}
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Priority</label>
+                        <label className="text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Priority</label>
                         <select
                             value={priority}
                             onChange={(e) => setPriority(e.target.value as "NORMAL" | "URGENT")}
-                            className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                            className="w-full bg-[hsl(var(--bg))] border border-[rgb(var(--border))] rounded-lg px-3 py-2.5 text-sm text-[rgb(var(--text))] focus:outline-none focus:border-emerald-500/50 transition-colors"
                         >
                             <option value="NORMAL">Normal</option>
                             <option value="URGENT">Urgent</option>
@@ -141,7 +141,7 @@ export default function NewTicketModal({ isOpen, onClose }: NewTicketModalProps)
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                            className="px-4 py-2 rounded-lg text-sm font-medium text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] hover:bg-[hsl(var(--bg))] transition-colors"
                         >
                             Cancel
                         </button>

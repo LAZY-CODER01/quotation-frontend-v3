@@ -24,8 +24,8 @@ function AdminContent() {
                 return (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6 max-w-4xl mx-auto p-8">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Gmail Configuration</h2>
-                            <p className="text-gray-400 text-sm">Manage the connection to the company email server.</p>
+                            <h2 className="text-2xl font-bold text-[rgb(var(--text))]">Gmail Configuration</h2>
+                            <p className="text-[rgb(var(--muted))] text-sm">Manage the connection to the company email server.</p>
                         </div>
                         <GmailSettings />
                     </div>
@@ -34,8 +34,8 @@ function AdminContent() {
                 return (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6 max-w-4xl mx-auto p-8">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">User Management</h2>
-                            <p className="text-gray-400 text-sm">Create and manage employee accounts.</p>
+                            <h2 className="text-2xl font-bold text-[rgb(var(--text))]">User Management</h2>
+                            <p className="text-[rgb(var(--muted))] text-sm">Create and manage employee accounts.</p>
                         </div>
                         <UserManagement />
                     </div>
@@ -45,8 +45,8 @@ function AdminContent() {
                 return (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6 max-w-4xl mx-auto p-8">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Ticket Completion Requests</h2>
-                            <p className="text-gray-400 text-sm">Review tickets marked for closure by employees.</p>
+                            <h2 className="text-2xl font-bold text-[rgb(var(--text))]">Ticket Completion Requests</h2>
+                            <p className="text-[rgb(var(--muted))] text-sm">Review tickets marked for closure by employees.</p>
                         </div>
                         <TicketRequests />
                     </div>
@@ -61,7 +61,7 @@ function AdminContent() {
 
 export default function AdminPage() {
     return (
-        <div className="h-full w-full bg-[#0F1115] overflow-y-auto">
+        <div className="h-full w-full bg-[hsl(var(--bg))] overflow-y-auto">
             <Suspense fallback={<div className="p-8 text-center text-zinc-500">Loading admin view...</div>}>
                 <AdminContent />
             </Suspense>

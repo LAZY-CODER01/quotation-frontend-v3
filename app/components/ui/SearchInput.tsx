@@ -53,7 +53,7 @@ export default function SearchInput() {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Search tickets, clients, quotations (DBQ-XX-XXXX)..."
-          className="w-full rounded-xl border border-gray-800 bg-[#0f1115] py-3 pl-10 pr-10 text-sm text-white outline-none ring-2 ring-transparent focus:border-emerald-500/50 focus:ring-emerald-500/20 transition-all"
+          className="w-full rounded-xl border border-[rgb(var(--border))] bg-[hsl(var(--bg))] py-3 pl-10 pr-10 text-sm text-[rgb(var(--text))] outline-none ring-2 ring-transparent focus:border-emerald-500/50 focus:ring-emerald-500/20 transition-all"
         />
         {searchQuery && (
           <button
@@ -67,8 +67,8 @@ export default function SearchInput() {
 
       {/* Results Dropdown */}
       {isOpen && searchQuery && (
-        <div className="absolute mt-2 w-full rounded-2xl bg-[#16191d] p-4 shadow-2xl border border-gray-800 z-50 max-h-[600px] overflow-y-auto custom-scrollbar">
-          <p className="mb-4 text-xs font-medium text-gray-500">
+        <div className="absolute mt-2 w-full rounded-2xl bg-[rgb(var(--panel))] p-4 shadow-2xl border border-[rgb(var(--border))] z-50 max-h-[600px] overflow-y-auto custom-scrollbar">
+          <p className="mb-4 text-xs font-medium text-[rgb(var(--muted))]">
             {filteredResults.length} {filteredResults.length === 1 ? "result" : "results"} found
           </p>
 
@@ -83,16 +83,16 @@ export default function SearchInput() {
                 <div
                   key={ticket.id}
                   onClick={() => handleSelectTicket(ticket)}
-                  className="group cursor-pointer rounded-xl bg-[#1c2025] p-4 transition-colors hover:bg-[#23282e] border border-transparent hover:border-gray-700"
+                  className="group cursor-pointer rounded-xl bg-[hsl(var(--bg))] p-4 transition-colors hover:bg-[hsl(var(--bg))]/80 border border-[rgb(var(--border))]"
                 >
                   {/* Top Row: Badges and Status */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex gap-2">
-                      <span className="rounded bg-gray-800 px-2 py-0.5 text-[10px] font-bold text-gray-300 border border-gray-700">
+                      <span className="rounded bg-[hsl(var(--bg))] px-2 py-0.5 text-[10px] font-bold text-[rgb(var(--text))] border border-[rgb(var(--border))]">
                         {ticket.ticket_number}
                       </span>
                       {quotation?.reference_id && (
-                        <span className="rounded bg-blue-900/30 px-2 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-800/50">
+                        <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-500 border border-blue-500/40">
                           {quotation.name.substring(0, 11)} {/* Truncate if too long */}
                         </span>
                       )}
@@ -113,7 +113,7 @@ export default function SearchInput() {
                   </h3>
 
                   {/* Bottom Row: Metadata */}
-                  <div className="flex items-center flex-wrap gap-2 text-[11px] text-gray-500">
+                    <div className="flex items-center flex-wrap gap-2 text-[11px] text-[rgb(var(--muted))]">
                     <span className="truncate max-w-[120px]" title={ticket.extraction_result?.email}>
                       {ticket.extraction_result?.email}
                     </span>
@@ -131,7 +131,7 @@ export default function SearchInput() {
 
                   {/* Footer: Assignment */}
                   {ticket.assigned_to && (
-                    <div className="mt-2 text-[10px] text-gray-500 border-t border-gray-800 pt-2 flex items-center gap-1">
+                    <div className="mt-2 text-[10px] text-[rgb(var(--muted))] border-t border-[rgb(var(--border))] pt-2 flex items-center gap-1">
                       <span>Assigned:</span>
                       <span className="text-gray-400 font-medium">{ticket.assigned_to}</span>
                     </div>
@@ -142,7 +142,7 @@ export default function SearchInput() {
           </div>
 
           {filteredResults.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-8 text-[rgb(var(--muted))]">
               <Search size={24} className="mb-2 opacity-20" />
               <p className="text-sm">No results found for "{searchQuery}"</p>
             </div>

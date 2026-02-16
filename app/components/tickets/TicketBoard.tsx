@@ -87,10 +87,10 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
     year: "2-digit",
   });
 
-  if (isLoading && emails.length === 0) return <div className="p-8 text-center text-zinc-500">Loading tickets...</div>;
+  if (isLoading && emails.length === 0) return <div className="p-8 text-center text-[rgb(var(--muted))]">Loading tickets...</div>;
 
   return (
-    <div className="flex h-full gap-6 pb-4 overflow-x-auto bg-[#0F1115]">
+    <div className="flex h-full gap-6 pb-4 overflow-x-auto bg-[hsl(var(--bg))]">
       {/* Inbox Column */}
       <TicketColumn
         title="Inbox"

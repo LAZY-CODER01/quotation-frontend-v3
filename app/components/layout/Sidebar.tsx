@@ -40,7 +40,7 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r bg-[rgb(13 15 19)] flex flex-col h-full transition-all duration-300 ease-in-out`}>
+        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r bg-[rgb(var(--panel))] flex flex-col h-full transition-all duration-300 ease-in-out`}>
             <div className="p-4 flex-1 flex flex-col items-center w-full">
                 {/* Logo Section */}
                 <div className={`mb-6 flex items-center gap-3 px-2 ${isCollapsed ? 'justify-center' : ''}`}>
@@ -49,22 +49,22 @@ export default function Sidebar() {
                     </div>
                     {!isCollapsed && (
                         <div className="overflow-hidden whitespace-nowrap">
-                            <p className="font-semibold text-white tracking-wide">D-BEST</p>
-                            <p className="text-[10px] text-gray-500 font-medium tracking-wider">ERP SYSTEM</p>
+                            <p className="font-semibold text-[rgb(var(--text))] tracking-wide">D-BEST</p>
+                            <p className="text-[10px] text-[rgb(var(--muted))] font-medium tracking-wider">ERP SYSTEM</p>
                         </div>
                     )}
                 </div>
 
                 {/* User Profile Snippet */}
                 {isMounted && user && (
-                    <div className={`mb-6 rounded-xl bg-[#181A1F] border border-white/5 p-3 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 mx-2'}`}>
+                    <div className={`mb-6 rounded-xl bg-[hsl(var(--bg))] border border-[rgb(var(--border))] p-3 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 mx-2'}`}>
                         <div className="h-8 w-8 shrink-0 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold border border-purple-500/30">
                             {user.username.slice(0, 2).toUpperCase()}
                         </div>
                         {!isCollapsed && (
                             <div className="overflow-hidden">
-                                <p className="text-sm font-medium text-white truncate w-32">{user.username}</p>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wider">{user.role}</p>
+                                <p className="text-sm font-medium text-[rgb(var(--text))] truncate w-32">{user.username}</p>
+                                <p className="text-[10px] text-[rgb(var(--muted))] uppercase tracking-wider">{user.role}</p>
                             </div>
                         )}
                     </div>
@@ -91,11 +91,11 @@ export default function Sidebar() {
                     {isMounted && user?.role === 'ADMIN' && (
                         <>
                             {!isCollapsed && (
-                                <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest animate-in fade-in duration-300">
+                                <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-[rgb(var(--muted))] uppercase tracking-widest animate-in fade-in duration-300">
                                     Admin Controls
                                 </div>
                             )}
-                            {isCollapsed && <div className="my-4 h-[1px] bg-white/5 mx-2" />}
+                            {isCollapsed && <div className="my-4 h-[1px] bg-[rgb(var(--border))] mx-2" />}
 
                             <SidebarItem
                                 icon={<Monitor size={18} />}
@@ -149,7 +149,7 @@ export default function Sidebar() {
                 </nav>
 
                 {/* Footer */}
-                <div className={`mt-auto border-t border-white/5 pt-4 w-full flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
+                <div className={`mt-auto border-t border-[rgb(var(--border))] pt-4 w-full flex flex-col gap-2 ${isCollapsed ? 'items-center' : ''}`}>
                     <SidebarItem
                         icon={<LogOut size={18} className="text-red-400" />}
                         label="Sign Out"

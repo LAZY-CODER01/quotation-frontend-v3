@@ -51,7 +51,7 @@ export default function TicketCard({ data }: TicketCardProps) {
 
       {/* Header: Name and Time */}
       <div className="flex justify-between items-start">
-        <h4 className="text-base font-semibold text-white group-hover:text-emerald-50 transition-colors truncate pr-2" title={companyName}>
+        <h4 className="text-base font-semibold text-[rgb(var(--text))] group-hover:text-emerald-50 transition-colors truncate pr-2" title={companyName}>
           {companyName}
         </h4>
         <span className="text-xs font-medium text-[rgb(var(--muted))] whitespace-nowrap shrink-0">

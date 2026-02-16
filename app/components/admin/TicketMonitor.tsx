@@ -83,23 +83,23 @@ export default function TicketMonitor() {
     };
 
     return (
-        <div className="bg-[#181A1F] rounded-xl border border-white/10 overflow-hidden flex flex-col h-[calc(100vh-140px)]">
-            <div className="p-4 border-b border-white/10 bg-[#181A1F] flex justify-between items-center">
+        <div className="bg-[rgb(var(--panel))] rounded-xl border border-[rgb(var(--border))] overflow-hidden flex flex-col h-[calc(100vh-140px)] shadow-sm">
+            <div className="p-4 border-b border-[rgb(var(--border))] bg-[rgb(var(--panel))] flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <Monitor size={18} className="text-blue-500" />
-                    <h2 className="text-lg font-semibold text-white">Live Monitor</h2>
-                    <span className="text-xs text-gray-500 px-2 py-0.5 bg-white/5 rounded-full border border-white/5">
+                    <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Live Monitor</h2>
+                    <span className="text-xs text-[rgb(var(--muted))] px-2 py-0.5 bg-[hsl(var(--bg))] rounded-full border border-[rgb(var(--border))]">
                         {tickets.length} Tickets
                     </span>
                 </div>
-                <button onClick={() => refetch()} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors">
+                <button onClick={() => refetch()} className="p-1.5 hover:bg-[hsl(var(--bg))] rounded-lg text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] transition-colors">
                     <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
                 </button>
             </div>
 
-            <div className="overflow-auto flex-1">
-                <table className="w-full text-left text-sm text-gray-400">
-                    <thead className="bg-[#0F1115] text-xs font-medium text-gray-500 uppercase tracking-wider sticky top-0 z-10 shadow-sm shadow-black/20">
+            <div className="overflow-auto flex-1 bg-[hsl(var(--bg))]">
+                <table className="w-full text-left text-sm text-[rgb(var(--muted))]">
+                    <thead className="bg-[rgb(var(--panel))] text-xs font-medium text-[rgb(var(--muted))] uppercase tracking-wider sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th className="px-4 py-3 border-b border-white/10 w-24">Time / Date</th>
                             <th className="px-4 py-3 border-b border-white/10 w-40">Assigned To</th>
@@ -114,7 +114,7 @@ export default function TicketMonitor() {
                     <tbody className="divide-y divide-white/5">
                         {isLoading && tickets.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                                <td colSpan={8} className="px-4 py-8 text-center text-[rgb(var(--muted))]">
                                     <div className="flex items-center justify-center gap-2">
                                         <Loader2 size={16} className="animate-spin" /> Loading data...
                                     </div>
@@ -127,19 +127,19 @@ export default function TicketMonitor() {
                                 <tr
                                     key={t.gmail_id}
                                     onClick={() => setSelectedTicket(t)}
-                                    className="bg-[#0F1115] hover:bg-[#181A1F] cursor-pointer transition-colors group"
+                                    className="bg-[hsl(var(--bg))] hover:bg-[hsl(var(--bg))]/80 cursor-pointer transition-colors group"
                                 >
                                     {/* Time / Date */}
                                     <td className="px-4 py-3">
-                                        <div className="font-bold text-white font-mono text-xs">{time}</div>
-                                        <div className="text-[10px] text-gray-600 font-mono">{date}</div>
+                                        <div className="font-bold text-[rgb(var(--text))] font-mono text-xs">{time}</div>
+                                        <div className="text-[10px] text-[rgb(var(--muted))] font-mono">{date}</div>
                                     </td>
 
                                     {/* Assigned To */}
                                     <td className="px-4 py-3">
                                         {t.assigned_to ? (
                                             <div className="border border-white/10 bg-[#181A1F] px-2 py-1 rounded text-xs text-gray-300 flex items-center justify-between">
-                                                <span className="truncate max-w-[100px]">{t.assigned_to}</span>
+                                                <span className="truncate max-w-[100px] text-[rgb(var(--text))]">{t.assigned_to}</span>
                                             </div>
                                         ) : (
                                             <div className="border border-yellow-500/20 bg-yellow-500/5 px-2 py-1 rounded text-xs text-yellow-500/80">
@@ -150,7 +150,7 @@ export default function TicketMonitor() {
 
                                     {/* Company */}
                                     <td className="px-4 py-3">
-                                        <div className="text-white font-medium truncate max-w-[180px]" title={t.sender}>
+                                        <div className="text-[rgb(var(--text))] font-medium truncate max-w-[180px]" title={t.sender}>
                                             {/* Extracting name from "Name <email>" if possible, purely presentational logic */}
                                             {t.sender.includes('<') ? t.sender.split('<')[0].replace(/"/g, '') : t.sender.split('@')[0]}
                                         </div>
@@ -159,18 +159,18 @@ export default function TicketMonitor() {
                                     {/* Email / Subject */}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-gray-500 truncate max-w-[250px]">
+                                            <span className="text-xs text-[rgb(var(--muted))] truncate max-w-[250px]">
                                                 {t.sender.includes('<') ? t.sender.match(/<([^>]+)>/)?.[1] : t.sender}
                                             </span>
-                                            <span className="text-white text-xs truncate max-w-[300px] group-hover:text-blue-400 transition-colors">
+                                            <span className="text-[rgb(var(--text))] text-xs truncate max-w-[300px] group-hover:text-blue-400 transition-colors">
                                                 {t.subject}
                                             </span>
                                         </div>
                                     </td>
 
                                     {/* View */}
-                                    <td className="px-4 py-3 text-center text-gray-500">
-                                        <div className="flex items-center justify-center gap-1 group-hover:text-white transition-colors">
+                                    <td className="px-4 py-3 text-center text-[rgb(var(--muted))]">
+                                        <div className="flex items-center justify-center gap-1 group-hover:text-[rgb(var(--text))] transition-colors">
                                             <Eye size={14} />
                                             <span className="text-[10px]">({t.extraction_result.Requirements?.length || 0})</span>
                                         </div>
@@ -194,25 +194,25 @@ export default function TicketMonitor() {
                                                     }`}>
                                                     AED {latestQuote.amount}
                                                 </span>
-                                                <span className="text-[9px] text-gray-600 font-mono flex items-center gap-1">
+                                            <span className="text-[9px] text-[rgb(var(--muted))] font-mono flex items-center gap-1">
                                                     {latestQuote.type === 'PO' ? <ShoppingCart size={8} /> : <FileText size={8} />}
                                                     {latestQuote.ref}
                                                 </span>
                                             </div>
                                         ) : (
-                                            <span className="text-gray-700 text-xs font-mono">—</span>
+                                            <span className="text-[rgb(var(--muted))] text-xs font-mono">—</span>
                                         )}
                                     </td>
 
                                     {/* Notes */}
                                     <td className="px-4 py-3 text-center">
                                         {t.internal_notes && t.internal_notes.length > 0 ? (
-                                            <div className="flex items-center justify-center gap-0.5 text-gray-400">
+                                            <div className="flex items-center justify-center gap-0.5 text-[rgb(var(--muted))]">
                                                 <MessageSquare size={12} />
                                                 <span className="text-[10px]">{t.internal_notes.length}</span>
                                             </div>
                                         ) : (
-                                            <span className="text-gray-700 text-[10px]">—</span>
+                                            <span className="text-[rgb(var(--muted))] text-[10px]">—</span>
                                         )}
                                     </td>
                                 </tr>

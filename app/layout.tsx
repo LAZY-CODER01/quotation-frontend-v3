@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className="bg-[hsl(var(--bg))] text-[rgb(var(--text))] " style={{
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-[hsl(var(--bg))] text-[rgb(var(--text))]" style={{
         fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
       }}>
         <AuthProvider>
