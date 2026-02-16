@@ -143,7 +143,7 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
 
   // Staging State
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [pendingAmount, setPendingAmount] = useState("");
+  // const [pendingAmount, setPendingAmount] = useState(""); // REMOVED - Auto-extract only
 
   // Local state for optimistic updates
   const [localFiles, setLocalFiles] = useState<QuotationFile[]>(ticket.quotation_files || []);
@@ -166,13 +166,13 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
     const file = e.target.files?.[0];
     if (file) {
       setPendingFile(file);
-      setPendingAmount("");
+      // setPendingAmount("");
     }
   };
 
   const handleCancel = () => {
     setPendingFile(null);
-    setPendingAmount("");
+    // setPendingAmount("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -181,15 +181,10 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
   const handleUpload = async () => {
     if (!pendingFile) return;
 
-    if (!pendingAmount.trim()) {
-      alert("Please enter a price before uploading.");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("file", pendingFile);
     formData.append("gmail_id", ticket.gmail_id);
-    formData.append("amount", pendingAmount);
+    formData.append("amount", ""); // Always empty to trigger auto-extraction
 
     setUploading(true);
 
@@ -201,7 +196,7 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
       url: "#",
       uploaded_at: new Date().toISOString(),
       reference_id: "PENDING",
-      amount: pendingAmount
+      amount: "Auto-Extracting..."
     };
 
     pendingFilesRef.current.add(tempId);
@@ -305,25 +300,19 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2 focus-within:border-blue-500/50 transition-all">
-              <span className="text-xs font-bold text-gray-500">AED</span>
-              <input
-                type="text"
-                value={pendingAmount}
-                onChange={(e) => setPendingAmount(e.target.value)}
-                placeholder="Enter Price..."
-                className="w-full bg-transparent text-sm text-white focus:outline-none placeholder-gray-600 font-mono"
-                autoFocus
-              />
+          <div className="flex items-center gap-3 mt-2">
+            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2">
+              <span className="text-xs text-gray-400 italic">
+                Price will be auto-extracted...
+              </span>
             </div>
             <button
               onClick={handleUpload}
-              disabled={uploading || !pendingAmount}
+              disabled={uploading}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-all shadow-lg shadow-blue-900/20"
             >
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              <span>Confirm</span>
+              <span>Confirm Upload</span>
             </button>
           </div>
         </div>
