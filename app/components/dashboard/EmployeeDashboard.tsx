@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import {
     Users,
-    FileText,
-    ShoppingCart,
+    Mail,
+    Send,
+    CheckCircle2,
+    PackageCheck,
+    Archive,
     Clock,
-    MoreHorizontal,
-    TrendingUp,
-    Ticket
+    MoreVertical
 } from 'lucide-react';
 import api from '../../../lib/api';
 
@@ -20,33 +21,38 @@ interface EmployeeStat {
         avatar: string;
     };
     role: string;
-    active_tickets: number;
-    quotations: number;
-    orders: number;
+    active_tickets: number; // Legacy, kept for now or reused
+    inbox_count: number;
+    sent_count: number;
+    confirmed_count: number;
+    completed_count: number;
+    closed_count: number;
+
+    quotations: number;     // Legacy
+    orders: number;         // Legacy
+    completed: number;      // Legacy
+    closed: number;         // Legacy
     avg_turnaround: number;
 }
 
-export default function EmployeeDashboard() {
+export default function TeamWorkflowDashboard() {
     const [stats, setStats] = useState<EmployeeStat[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [timeRange, setTimeRange] = useState('all'); // '24h' | '7d' | '30d' | 'all'
 
     useEffect(() => {
         fetchStats();
-    }, []);
+    }, [timeRange]);
 
     const fetchStats = async () => {
         try {
-            const response = await api.get('/admin/employee-stats');
-
+            setLoading(true);
+            const response = await api.get(`/admin/employee-stats?range=${timeRange}`);
             if (response.data.success) {
                 setStats(response.data.stats);
-            } else {
-                throw new Error(response.data.error || 'Failed to fetch stats');
             }
-        } catch (err: any) {
-            console.error("Error fetching employee stats:", err);
-            setError(err.message || 'Failed to load employee data');
+        } catch (err) {
+            console.error("Failed to fetch stats", err);
         } finally {
             setLoading(false);
         }
@@ -54,164 +60,119 @@ export default function EmployeeDashboard() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[500px] w-full bg-[hsl(var(--bg))] text-[rgb(var(--text))]">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+            <div className="flex items-center justify-center min-h-[500px] w-full bg-[hsl(var(--bg))]">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-500"></div>
             </div>
         );
     }
-
-    if (error) {
-        return (
-            <div className="flex items-center justify-center min-h-[500px] w-full bg-[hsl(var(--bg))] text-red-500">
-                <p>{error}</p>
-            </div>
-        );
-    }
-
-    // Calculate aggregates based on fetched stats
-    const totalEmployees = stats.length;
-    // Quotations and Orders are already summed per employee, so sum them up for total
-    const totalQuotations = stats.reduce((acc, curr) => acc + curr.quotations, 0);
-    const totalOrders = stats.reduce((acc, curr) => acc + curr.orders, 0);
 
     return (
-        <div className="min-h-screen bg-[hsl(var(--bg))] p-6 md:p-8 text-[rgb(var(--text))] font-sans">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="min-h-screen bg-[hsl(var(--bg))] p-6 text-[rgb(var(--text))]">
+            <div className="max-w-[1600px] mx-auto space-y-6">
 
-                {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold text-[rgb(var(--text))] mb-1">Employees</h1>
-                    <p className="text-[rgb(var(--muted))] text-sm">Manage team members and track performance</p>
-                </div>
-
-                {/* Stats Cards Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                    {/* Card 1: Total Employees */}
-                    <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl p-6 flex justify-between items-start shadow-sm">
-                        <div>
-                            <p className="text-[rgb(var(--muted))] text-sm font-medium mb-1">Total Employees</p>
-                            <h3 className="text-3xl font-bold text-[rgb(var(--text))]">{totalEmployees}</h3>
-                        </div>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                <header className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Team Workflow Monitor</h1>
+                        <p className="text-[rgb(var(--muted))] text-sm">Real-time ticket distribution across all stages</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <select
+                            value={timeRange}
+                            onChange={(e) => setTimeRange(e.target.value)}
+                            className="bg-[rgb(var(--panel))] text-xs font-medium border border-[rgb(var(--border))] rounded-md px-3 py-1.5 outline-none focus:border-emerald-500 cursor-pointer"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                        <div className="text-xs text-[rgb(var(--muted))] font-mono bg-[rgb(var(--panel))] px-3 py-1.5 rounded border border-[rgb(var(--border))]">
+                            LIVE TRACKING
                         </div>
                     </div>
+                </header>
 
-                    {/* Card 2: Total Quotations */}
-                    <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl p-6 flex justify-between items-start shadow-sm">
-                        <div>
-                            <p className="text-[rgb(var(--muted))] text-sm font-medium mb-1">Total Quotations Sent</p>
-                            <h3 className="text-3xl font-bold text-[rgb(var(--text))]">{totalQuotations}</h3>
-                        </div>
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-blue-500" />
-                        </div>
-                    </div>
-
-                    {/* Card 3: Total Orders */}
-                    <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl p-6 flex justify-between items-start shadow-sm">
-                        <div>
-                            <p className="text-[rgb(var(--muted))] text-sm font-medium mb-1">Total Orders Closed</p>
-                            <h3 className="text-3xl font-bold text-[rgb(var(--text))]">{totalOrders}</h3>
-                        </div>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <ShoppingCart className="w-5 h-5 text-emerald-500" />
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Team Table */}
-                <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-6 py-4 border-b border-[rgb(var(--border))]">
-                        <h2 className="text-base font-semibold text-[rgb(var(--text))]">Team Members</h2>
-                    </div>
-
+                <div className="bg-[rgb(var(--panel))] border border-[rgb(var(--border))] rounded-xl shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left">
+                        <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-[rgb(var(--border))] text-[rgb(var(--muted))] text-xs uppercase tracking-wider bg-[rgb(var(--panel))]">
-                                    <th className="px-6 py-4 font-medium">Employee</th>
-                                    <th className="px-6 py-4 font-medium">Role</th>
-                                    <th className="px-6 py-4 font-medium">Active Tickets</th>
-                                    <th className="px-6 py-4 font-medium">Quotations</th>
-                                    <th className="px-6 py-4 font-medium">Orders</th>
-                                    <th className="px-6 py-4 font-medium">Avg Turnaround</th>
-                                    <th className="px-6 py-4 font-medium"></th>
+                                <tr className="border-b border-[rgb(var(--border))] text-[rgb(var(--muted))] text-[10px] uppercase tracking-widest bg-[hsl(var(--bg))]/50">
+                                    <th className="px-6 py-5 font-semibold w-[250px]">Team Member</th>
+
+                                    {/* Status Columns */}
+                                    <th className="px-4 py-5 font-semibold text-center border-l border-[rgb(var(--border))] bg-blue-500/5">
+                                        <div className="flex flex-col items-center gap-1 text-[rgb(var(--color-blue))]">
+                                            <Mail className="w-4 h-4" />
+                                            <span>Inbox ({stats.reduce((acc, curr) => acc + curr.inbox_count, 0)})</span>
+                                        </div>
+                                    </th>
+                                    <th className="px-4 py-5 font-semibold text-center border-l border-[rgb(var(--border))] bg-yellow-500/5">
+                                        <div className="flex flex-col items-center gap-1 text-yellow-500">
+                                            <Send className="w-4 h-4" />
+                                            <span>Sent ({stats.reduce((acc, curr) => acc + curr.sent_count, 0)})</span>
+                                        </div>
+                                    </th>
+                                    <th className="px-4 py-5 font-semibold text-center border-l border-[rgb(var(--border))] bg-purple-500/5">
+                                        <div className="flex flex-col items-center gap-1 text-purple-500">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span>Confirmed ({stats.reduce((acc, curr) => acc + curr.confirmed_count, 0)})</span>
+                                        </div>
+                                    </th>
+                                    <th className="px-4 py-5 font-semibold text-center border-l border-[rgb(var(--border))] bg-emerald-500/5">
+                                        <div className="flex flex-col items-center gap-1 text-emerald-500">
+                                            <PackageCheck className="w-4 h-4" />
+                                            <span>Completed ({stats.reduce((acc, curr) => acc + curr.completed_count, 0)})</span>
+                                        </div>
+                                    </th>
+                                    <th className="px-4 py-5 font-semibold text-center border-l border-[rgb(var(--border))] bg-red-500/5">
+                                        <div className="flex flex-col items-center gap-1 text-red-400">
+                                            <Archive className="w-4 h-4" />
+                                            <span>Closed ({stats.reduce((acc, curr) => acc + curr.closed_count, 0)})</span>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
+
                             <tbody className="divide-y divide-[rgb(var(--border))]">
-                                {stats.length > 0 ? (
-                                    stats.map((emp) => (
-                                        <tr key={emp.id} className="hover:bg-[hsl(var(--bg))]/60 transition-colors">
-                                            {/* Name & Avatar */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold text-sm">
-                                                        {emp.employee.avatar}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-[rgb(var(--text))]">{emp.employee.name}</p>
-                                                        <p className="text-xs text-[rgb(var(--muted))]">{emp.employee.email}</p>
-                                                    </div>
+                                {stats.map((emp) => (
+                                    <tr key={emp.id} className="hover:bg-[hsl(var(--bg))]/40 transition-colors">
+                                        {/* Employee Info */}
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 font-bold text-sm">
+                                                    {emp.employee.avatar}
                                                 </div>
-                                            </td>
-
-                                            {/* Role Pill */}
-                                            <td className="px-6 py-4">
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[hsl(var(--bg))] border border-[rgb(var(--border))] text-[rgb(var(--muted))]">
-                                                    {emp.role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                                </span>
-                                            </td>
-
-                                            {/* Active Tickets */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-[rgb(var(--muted))] text-sm">
-                                                    <Ticket className="w-4 h-4 text-zinc-500" />
-                                                    <span>{emp.active_tickets}</span>
+                                                <div>
+                                                    <p className="text-sm font-semibold">{emp.employee.name}</p>
+                                                    <p className="text-[11px] text-[rgb(var(--muted))]">{emp.role}</p>
                                                 </div>
-                                            </td>
+                                            </div>
+                                        </td>
 
-                                            {/* Quotations */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-[rgb(var(--muted))] text-sm">
-                                                    <FileText className="w-4 h-4 text-zinc-500" />
-                                                    <span>{emp.quotations}</span>
-                                                </div>
-                                            </td>
+                                        {/* Status Counts */}
+                                        <td className="px-4 py-4 text-center border-l border-[rgb(var(--border))]">
+                                            <span className={`text-lg font-bold ${emp.inbox_count > 5 ? 'text-orange-500' : 'text-[rgb(var(--text))]'}`}>
+                                                {emp.inbox_count}
+                                            </span>
+                                        </td>
 
-                                            {/* Orders */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <ShoppingCart className="w-4 h-4 text-emerald-500" />
-                                                    <span className="text-emerald-400 font-medium">{emp.orders}</span>
-                                                </div>
-                                            </td>
+                                        <td className="px-4 py-4 text-center border-l border-[rgb(var(--border))]">
+                                            <span className="text-lg font-bold text-yellow-500">{emp.sent_count}</span>
+                                        </td>
 
-                                            {/* Avg Turnaround */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-[rgb(var(--muted))] text-sm">
-                                                    <Clock className="w-4 h-4 text-zinc-500" />
-                                                    <span>{emp.active_tickets >= 0 ? `${emp.avg_turnaround}h` : '-'}</span>
-                                                </div>
-                                            </td>
+                                        <td className="px-4 py-4 text-center border-l border-[rgb(var(--border))]">
+                                            <span className="text-lg font-bold text-purple-500">{emp.confirmed_count}</span>
+                                        </td>
 
-                                            {/* Menu Actions */}
-                                            <td className="px-6 py-4 text-right">
-                                                <button className="text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] transition-colors p-1 rounded-md hover:bg-[hsl(var(--bg))]">
-                                                    <MoreHorizontal className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-[rgb(var(--muted))] text-sm">
-                                            No employees found.
+                                        <td className="px-4 py-4 text-center border-l border-[rgb(var(--border))]">
+                                            <span className="text-lg font-bold text-emerald-500">{emp.completed_count}</span>
+                                        </td>
+
+                                        <td className="px-4 py-4 text-center border-l border-[rgb(var(--border))]">
+                                            <span className="text-lg font-bold text-red-500">{emp.closed_count}</span>
                                         </td>
                                     </tr>
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>

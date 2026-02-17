@@ -55,15 +55,72 @@ export default function ClientDashboard() {
 
     const fetchClients = async () => {
         try {
-            const response = await api.get('/admin/clients');
-            if (response.data.success) {
-                setClients(response.data.clients);
+            const [clientsResponse, ticketsResponse] = await Promise.all([
+                api.get('/admin/clients'),
+                api.get('/emails?limit=1000') // Fetch recent 1000 tickets to aggregate
+            ]);
+
+            if (clientsResponse.data.success) {
+                let clientsData: ClientStat[] = clientsResponse.data.clients;
+
+                if (ticketsResponse.data.success) {
+                    const tickets = ticketsResponse.data.data;
+
+                    // Map client emails to ticket counts
+                    const ticketCounts = new Map<string, number>();
+
+                    tickets.forEach((ticket: any) => {
+                        // Extract email from sender field if possible, or matches company name
+                        const sender = ticket.sender || '';
+                        const company = ticket.company_name || '';
+
+                        // We need to match tickets to clients. 
+                        // Strategy: Iterate clients and check if ticket belongs to them
+                        // This is O(N*M), but with <1000 items it's fine. 
+                        // Better: Pre-process tickets?? 
+                        // Actually, let's iterate clients and filter tickets for each.
+                    });
+
+                    // Update clients with local counts
+                    clientsData = clientsData.map(client => {
+                        const clientEmail = client.contact.email?.toLowerCase();
+                        const clientCompany = client.company?.toLowerCase();
+                        const clientName = client.name?.toLowerCase();
+
+                        // Count tickets that match this client
+                        const clientTicketCount = tickets.filter((ticket: any) => {
+                            const tSender = (ticket.sender || '').toLowerCase();
+                            const tCompany = (ticket.company_name || '').toLowerCase();
+
+                            // Match Logic:
+                            // 1. Email match (most accurate)
+                            if (clientEmail && tSender.includes(clientEmail)) return true;
+
+                            // 2. Exact Company Name match
+                            if (clientCompany && tCompany === clientCompany) return true;
+
+                            // 3. Sender Name approximate match?? (Risky, skip for now)
+
+                            return false;
+                        }).length;
+
+                        return {
+                            ...client,
+                            stats: {
+                                ...client.stats,
+                                orders: clientTicketCount // Override with actual ticket count
+                            }
+                        };
+                    });
+                }
+
+                setClients(clientsData);
             } else {
-                throw new Error(response.data.error || 'Failed to fetch clients');
+                throw new Error(clientsResponse.data.error || 'Failed to fetch clients');
             }
         } catch (err: any) {
-            console.error("Error fetching clients:", err);
-            setError(err.message || 'Failed to load client data');
+            console.error("Error fetching data:", err);
+            setError(err.message || 'Failed to load data');
         } finally {
             setLoading(false);
         }
