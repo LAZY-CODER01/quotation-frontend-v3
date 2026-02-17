@@ -3,6 +3,8 @@ export interface ExtractionRequirement {
   Quantity: string;
   Unit: string;
   "Unit price": string;
+  matches?: any[]; // Persisted search results
+  selectedMatch?: any; // The specific match selected by the user
 }
 
 export interface QuotationFile {

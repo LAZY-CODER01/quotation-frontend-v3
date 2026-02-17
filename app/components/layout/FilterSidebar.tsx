@@ -38,15 +38,15 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[400px] bg-[#0F1115] border-l border-white/10 shadow-2xl z-50 flex flex-col">
+    <div className="fixed inset-y-0 right-0 w-[400px] bg-[rgb(var(--bg-primary))] border-l border-[rgb(var(--border-primary))] shadow-2xl z-50 flex flex-col">
 
       {/* --- Header --- */}
-      <div className="flex items-center justify-between p-4 border-b border-white/5">
+      <div className="flex items-center justify-between p-4 border-b border-[rgb(var(--border-secondary))]">
         <div className="flex items-center gap-2 text-emerald-500">
           <Filter size={20} />
-          <h2 className="font-semibold text-white">Filters</h2>
+          <h2 className="font-semibold text-[rgb(var(--text-primary))]">Filters</h2>
         </div>
-        <button onClick={onClose} className="text-gray-400 hover:text-white">
+        <button onClick={onClose} className="text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]">
           <X size={20} />
         </button>
       </div>
@@ -56,7 +56,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
         {/* 1. Status Column */}
         <div>
-          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 block">
+          <label className="text-xs font-semibold text-[rgb(var(--text-secondary))] uppercase tracking-wider mb-3 block">
             Status / Column
           </label>
           <div className="flex flex-wrap gap-2">
@@ -68,7 +68,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
                   flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all
                   ${localFilters.statuses.includes(status)
                     ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
-                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-gray-600'}
+                    : 'bg-[rgb(var(--bg-tertiary))] border-[rgb(var(--border-primary))] text-[rgb(var(--text-secondary))] hover:border-[rgb(var(--hover-border))}'}
                 `}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${localFilters.statuses.includes(status) ? 'bg-emerald-400' : 'bg-gray-500'}`} />
@@ -90,7 +90,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
                   py-2 rounded-lg text-xs font-medium border transition-all
                   ${localFilters.urgency === u
                     ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5'
-                    : 'border-white/10 text-gray-400 hover:bg-white/5'}
+                    : 'border-[rgb(var(--border-primary))] text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))]]'}
                 `}
               >
                 {u.replace('_', ' ')}
@@ -101,13 +101,13 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
         {/* 3. Date Range */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[rgb(var(--text-secondary))] uppercase">
             <Calendar size={14} /> Date Range
           </div>
           <select
             value={localFilters.dateType}
             onChange={(e) => handleChange('dateType', e.target.value)}
-            className="w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
+            className="w-full bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none"
           >
             <option value="received">Received Date</option>
             <option value="updated">Updated Date</option>
@@ -117,13 +117,13 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
               type="date"
               value={localFilters.startDate}
               onChange={(e) => handleChange('startDate', e.target.value)}
-              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
+              className="bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none"
             />
             <input
               type="date"
               value={localFilters.endDate}
               onChange={(e) => handleChange('endDate', e.target.value)}
-              className="bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none"
+              className="bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none"
             />
           </div>
         </div>
@@ -149,13 +149,13 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
            </div> */}
 
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Assigned Employee</label>
+            <label className="text-xs text-[rgb(var(--text-secondary))] mb-1.5 block">Assigned Employee</label>
             <div className="relative">
-              <User className="absolute left-3 top-2.5 text-gray-500" size={14} />
+              <User className="absolute left-3 top-2.5 text-[rgb(var(--text-tertiary))]" size={14} />
               <select
                 value={localFilters.assignedEmployeeName}
                 onChange={(e) => handleChange('assignedEmployeeName', e.target.value)}
-                className="w-full pl-9 bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none appearance-none"
+                className="w-full pl-9 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none appearance-none"
               >
                 <option value="">All Employees</option>
                 {allUsers.map((u: any) => (
@@ -165,7 +165,7 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
                 ))}
               </select>
               <div className="absolute right-3 top-3 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg className="w-4 h-4 text-[rgb(var(--text-tertiary))]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </div>
             </div>
           </div>
@@ -198,14 +198,14 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 
         {/* 6. Quotation Status & Amount */}
         <div className="space-y-3">
-          <label className="text-xs text-gray-400 uppercase">Quotation Status</label>
-          <div className="flex rounded-lg border border-white/10 overflow-hidden">
+          <label className="text-xs text-[rgb(var(--text-secondary))] uppercase">Quotation Status</label>
+          <div className="flex rounded-lg border border-[rgb(var(--border-primary))] overflow-hidden">
             {['ALL', 'HAS_QUOTATION', 'NO_QUOTATION'].map(s => (
               <button
                 key={s}
                 onClick={() => handleChange('quotationStatus', s)}
                 className={`flex-1 py-2 text-[10px] font-medium transition-colors 
-                        ${localFilters.quotationStatus === s ? 'bg-emerald-500 text-white' : 'hover:bg-white/5 text-gray-400'}`}
+                        ${localFilters.quotationStatus === s ? 'bg-emerald-500 text-white' : 'hover:bg-[rgb(var(--hover-bg))] text-[rgb(var(--text-secondary))]]'}`}
               >
                 {s === 'ALL' ? 'All' : s === 'HAS_QUOTATION' ? 'Has Quotation' : 'No Quotation'}
               </button>
@@ -223,13 +223,13 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
           <h3 className="text-xs font-bold text-blue-400 flex items-center gap-2">
             Customer Purchase Order (CPO)
           </h3>
-          <div className="flex rounded-lg border border-white/10 overflow-hidden">
+          <div className="flex rounded-lg border border-[rgb(var(--border-primary))] overflow-hidden">
             {['ALL', 'HAS_CPO', 'NO_CPO'].map(s => (
               <button
                 key={s}
                 onClick={() => handleChange('cpoStatus', s)}
                 className={`flex-1 py-2 text-[10px] font-medium transition-colors 
-                        ${localFilters.cpoStatus === s ? 'bg-blue-500 text-white' : 'hover:bg-white/5 text-gray-400'}`}
+                        ${localFilters.cpoStatus === s ? 'bg-blue-500 text-white' : 'hover:bg-[rgb(var(--hover-bg))] text-[rgb(var(--text-secondary))]]'}`}
               >
                 {s === 'ALL' ? 'All' : s === 'HAS_CPO' ? 'Has CPO' : 'No CPO'}
               </button>
@@ -246,10 +246,10 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
       </div>
 
       {/* --- Footer --- */}
-      <div className="p-4 border-t border-white/5 bg-[#0F1115] flex gap-3">
+      <div className="p-4 border-t border-[rgb(var(--border-secondary))] bg-[rgb(var(--bg-primary))] flex gap-3">
         <button
           onClick={() => setLocalFilters(INITIAL_FILTERS)}
-          className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-400 text-sm font-medium hover:bg-white/5 hover:text-white transition-all"
+          className="flex-1 py-2.5 rounded-lg border border-[rgb(var(--border-primary))] text-[rgb(var(--text-secondary))] text-sm font-medium hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))] transition-all"
         >
           Clear All
         </button>
@@ -268,15 +268,15 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
 function InputGroup({ label, icon, placeholder, value, onChange }: any) {
   return (
     <div className="w-full">
-      {label && <label className="text-xs text-gray-400 mb-1.5 block">{label}</label>}
+      {label && <label className="text-xs text-[rgb(var(--text-secondary))] mb-1.5 block">{label}</label>}
       <div className="relative">
-        {icon && <div className="absolute left-3 top-3 text-gray-500">{icon}</div>}
+        {icon && <div className="absolute left-3 top-3 text-[rgb(var(--text-tertiary))]">{icon}</div>}
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full bg-black/20 border border-white/10 rounded-lg p-2.5 text-sm text-gray-300 focus:border-emerald-500 outline-none ${icon ? 'pl-9' : ''}`}
+          className={`w-full bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none ${icon ? 'pl-9' : ''}`}
         />
       </div>
     </div>

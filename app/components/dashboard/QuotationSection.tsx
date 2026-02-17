@@ -68,7 +68,7 @@ const FileRow = ({
   };
 
   return (
-    <div className="group flex items-center justify-between p-3 bg-[#181A1F] border border-white/5 hover:border-white/10 rounded-lg transition-all">
+    <div className="group flex items-center justify-between p-3 bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-secondary))] hover:border-[rgb(var(--hover-border))] rounded-lg transition-all">
 
       {/* File Info */}
       <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -76,15 +76,15 @@ const FileRow = ({
           <FileText size={16} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm text-gray-200 truncate pr-4" title={file.name}>
+          <p className="text-sm text-[rgb(var(--text-primary))] truncate pr-4" title={file.name}>
             {/* ✅ FIX: Show Filename as primary */}
             {file.name}
           </p>
-          <p className="text-[10px] text-gray-500 truncate" title={file.reference_id}>
+          <p className="text-[10px] text-[rgb(var(--text-tertiary))] truncate" title={file.reference_id}>
             {/* Show Reference ID below */}
             {file.reference_id || "No Ref ID"}
           </p>
-          <p className="text-[10px] text-gray-500">
+          <p className="text-[10px] text-[rgb(var(--text-tertiary))]">
             {formatUaeDateTime(file.uploaded_at)}
           </p>
         </div>
@@ -94,7 +94,7 @@ const FileRow = ({
       <div className="flex items-center gap-3">
 
         {/* Editable Amount Input */}
-        <div className="flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded px-2 py-1.5 focus-within:border-blue-500/50 transition-colors w-24 sm:w-28">
+        <div className="flex items-center gap-2 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded px-2 py-1.5 focus-within:border-blue-500/50 transition-colors w-24 sm:w-28">
           <span className="text-[10px] font-bold text-green-500">AED</span>
           <input
             type="text"
@@ -103,7 +103,7 @@ const FileRow = ({
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             placeholder="0.00"
-            className="w-full bg-transparent text-xs text-white  text-right font-mono"
+            className="w-full bg-transparent text-xs text-[rgb(var(--text-primary))]  text-right font-mono"
           />
           {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
         </div>
@@ -114,7 +114,7 @@ const FileRow = ({
           target="_blank"
           rel="noopener noreferrer"
           download // Encourage browser to download
-          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-gray-400 bg-white/5 hover:bg-white/10 hover:text-white rounded border border-white/5 hover:border-white/10 transition-all"
+          className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-medium text-[rgb(var(--text-secondary))] bg-[rgb(var(--bg-tertiary))] hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))] rounded border border-[rgb(var(--border-secondary))] hover:border-[rgb(var(--hover-border))] transition-all"
         >
           <Download size={12} />
           <span>Download</span>
@@ -125,7 +125,7 @@ const FileRow = ({
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+            className="p-1.5 text-[rgb(var(--text-secondary))] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
             title="Delete File (Admin)"
           >
             {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -267,12 +267,12 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
   };
 
   return (
-    <div className="bg-[#0F1115] rounded-lg p-1 space-y-4">
+    <div className="bg-[rgb(var(--bg-primary))] rounded-lg p-1 space-y-4">
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-white">Quotation Files</h3>
+          <h3 className="text-sm font-semibold text-[rgb(var(--text-primary))]">Quotation Files</h3>
           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
             {ticket.ticket_number || "NO-ID"}
           </span>
@@ -287,22 +287,22 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
               <FileText size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate" title={pendingFile.name}>
+              <p className="text-sm font-medium text-[rgb(var(--text-primary))] truncate" title={pendingFile.name}>
                 {pendingFile.name}
               </p>
               <p className="text-[10px] text-blue-400">Ready to upload</p>
             </div>
             <button
               onClick={handleCancel}
-              className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors"
+              className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-full text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"
             >
               <X size={16} />
             </button>
           </div>
 
           <div className="flex items-center gap-3 mt-2">
-            <div className="flex-1 flex items-center gap-2 bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2">
-              <span className="text-xs text-gray-400 italic">
+            <div className="flex-1 flex items-center gap-2 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg px-3 py-2">
+              <span className="text-xs text-[rgb(var(--text-secondary))] italic">
                 Price will be auto-extracted...
               </span>
             </div>
@@ -317,8 +317,8 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between p-3 bg-[#181A1F] border border-dashed border-white/10 rounded-lg">
-          <p className="text-xs text-gray-500 font-mono hidden sm:block">
+        <div className="flex items-center justify-between p-3 bg-[rgb(var(--bg-secondary))] border border-dashed border-[rgb(var(--border-primary))] rounded-lg">
+          <p className="text-xs text-[rgb(var(--text-tertiary))] font-mono hidden sm:block">
             DBQ-XX-XXXX Company.xlsx
           </p>
           <div className="w-full sm:w-auto">
@@ -330,7 +330,7 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[#22252B] hover:bg-[#2A2E35] border border-white/10 rounded-lg text-xs text-gray-300 transition-all hover:text-white hover:border-white/20"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-1.5 bg-[rgb(var(--bg-tertiary))] hover:bg-[rgb(var(--hover-bg))] border border-[rgb(var(--border-primary))] rounded-lg text-xs text-[rgb(var(--text-secondary))] transition-all hover:text-[rgb(var(--text-primary))] hover:border-[rgb(var(--hover-border))]"
             >
               <Upload size={14} />
               <span>Select File</span>
@@ -361,7 +361,7 @@ export default function QuotationSection({ ticket, onFileAdded, onFileDeleted, o
             ))
         ) : (
           !pendingFile && (
-            <div className="py-4 text-center text-xs text-gray-600 italic">
+            <div className="py-4 text-center text-xs text-[rgb(var(--text-tertiary))] italic">
               No files uploaded yet.
             </div>
           )

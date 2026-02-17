@@ -23,7 +23,7 @@ export default function SidebarItem({
             title={collapsed ? label : undefined}
             className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${active
                 ? "bg-emerald-500/10 text-emerald-500"
-                : "text-[rgb(var(--muted))] hover:bg-[hsl(var(--bg))] hover:text-white"
+                : "text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))]"
                 } ${collapsed ? 'justify-center' : ''}`}
         >
             {icon}

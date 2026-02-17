@@ -87,10 +87,10 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
     year: "2-digit",
   });
 
-  if (isLoading && emails.length === 0) return <div className="p-8 text-center text-[rgb(var(--muted))]">Loading tickets...</div>;
+  if (isLoading && emails.length === 0) return <div className="p-8 text-center text-[rgb(var(--text-secondary))]">Loading tickets...</div>;
 
   return (
-    <div className="flex h-full gap-6 pb-4 overflow-x-auto bg-[hsl(var(--bg))]">
+    <div className="flex h-full gap-6 pb-4 overflow-x-auto ">
       {/* Inbox Column */}
       <TicketColumn
         title="Inbox"
@@ -140,7 +140,7 @@ export default function TicketsBoard({ onTicketClick, activeFilters, loadMoreTri
 
       {/* Load More Indicator (Optional UX improvement if manual trigger is not enough) */}
       {isFetchingNextPage && (
-        <div className="min-w-[200px] flex items-center justify-center text-zinc-500">
+        <div className="min-w-[200px] flex items-center justify-center text-[rgb(var(--text-tertiary))]">
           Loading more...
         </div>
       )}

@@ -22,10 +22,10 @@ export default function ApiStatusIndicator() {
     return (
         <div
             className={`
-        flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-300
+        flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs text-[rgb(var(--text-primary))] font-semibold transition-all duration-300
         ${isWorking
-                    ? "bg-red-500/10 border-red-500/50 text-red-400"
-                    : "bg-emerald-500/10 border-emerald-500/50 text-emerald-400"
+                    ? "bg-red-500/10 border-red-500/50 text-red-800"
+                    : "bg-emerald-500/10 border-emerald-500/50 text-emerald-800"
                 }
       `}
             title={isWorking ? `${activeRequests} active request(s)` : "System Idle"}

@@ -40,7 +40,7 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r bg-[rgb(var(--panel))] flex flex-col h-full transition-all duration-300 ease-in-out`}>
+        <aside className={`${isCollapsed ? 'w-20' : 'w-64'} shrink-0 border-r border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-primary))] flex flex-col h-full transition-all duration-300 ease-in-out`}>
             <div className="p-4 flex-1 flex flex-col items-center w-full">
                 {/* Logo Section */}
                 <div className={`mb-6 flex items-center gap-3 px-2 ${isCollapsed ? 'justify-center' : ''}`}>
@@ -160,7 +160,7 @@ export default function Sidebar() {
                     {/* Toggle Button */}
                     <button
                         onClick={toggleSidebar}
-                        className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-500 hover:bg-white/5 hover:text-white transition-colors ${isCollapsed ? 'justify-center w-full' : 'w-full'}`}
+                        className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))] transition-colors ${isCollapsed ? 'justify-center w-full' : 'w-full'}`}
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
