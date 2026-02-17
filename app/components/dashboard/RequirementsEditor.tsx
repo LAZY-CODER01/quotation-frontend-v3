@@ -71,7 +71,7 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
         const headers: HeadersInit = { "Content-Type": "application/json" };
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
-        const res = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(debouncedDescription)}`, { headers });
+        const res = await fetch(`https://quotation-service-571563971522.us-central1.run.app/api/search?q=${encodeURIComponent(debouncedDescription)}`, { headers });
         const data = await res.json();
 
         if (data.success && data.results.length > 0) {
