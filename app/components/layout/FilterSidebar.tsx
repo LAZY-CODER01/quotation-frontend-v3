@@ -5,6 +5,7 @@ import { X, Filter, DollarSign, Calendar, Hash, Mail, Building, User } from "luc
 import { useState } from "react";
 import { FilterState, INITIAL_FILTERS } from "../../../types/filters";
 import { useAuth } from "../../../context/AuthContext";
+import DateRangePicker, { DateRange } from "../ui/DateRangePicker";
 
 interface FilterSidebarProps {
   isOpen: boolean;
@@ -112,20 +113,14 @@ export default function FilterSidebar({ isOpen, onClose, currentFilters, onApply
             <option value="received">Received Date</option>
             <option value="updated">Updated Date</option>
           </select>
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              type="date"
-              value={localFilters.startDate}
-              onChange={(e) => handleChange('startDate', e.target.value)}
-              className="bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none"
-            />
-            <input
-              type="date"
-              value={localFilters.endDate}
-              onChange={(e) => handleChange('endDate', e.target.value)}
-              className="bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg p-2.5 text-sm text-[rgb(var(--text-primary))] focus:border-emerald-500 outline-none"
-            />
-          </div>
+          <DateRangePicker
+            startDate={localFilters.startDate ? new Date(localFilters.startDate) : null}
+            endDate={localFilters.endDate ? new Date(localFilters.endDate) : null}
+            onChange={(range: DateRange) => {
+              handleChange('startDate', range.startDate ? range.startDate.toISOString() : '');
+              handleChange('endDate', range.endDate ? range.endDate.toISOString() : '');
+            }}
+          />
         </div>
 
         <hr className="border-white/5" />

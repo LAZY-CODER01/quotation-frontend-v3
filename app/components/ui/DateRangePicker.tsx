@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isWithinInterval, startOfWeek, endOfWeek, isBefore, isAfter } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X, ArrowRight } from 'lucide-react';
 
-interface DateRange {
+export interface DateRange {
     startDate: Date | null;
     endDate: Date | null;
 }

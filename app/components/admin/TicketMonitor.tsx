@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Loader2, Eye, ShoppingCart, FileText, MessageSquare,
-    Monitor
+    Monitor, Filter
 } from "lucide-react";
 import TicketSidebar from "../tickets/TicketSidebar";
+import FilterSidebar from "../layout/FilterSidebar";
 import { EmailExtraction } from "../../../types/email";
 import { useTickets } from "../../../hooks/useTickets";
 import { formatUae, formatUaeTime } from "../../../app/lib/time";
+import { FilterState, INITIAL_FILTERS } from "../../../types/filters";
+import { useSearch } from "../../../context/SearchContext";
+import { ticketMatchesSearch } from "../../../app/lib/searchUtils";
 
 export default function TicketMonitor() {
     // 1. Replaced separate state and useEffect with useTickets hook via React Query
@@ -17,6 +21,11 @@ export default function TicketMonitor() {
     });
 
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
+
+    // Filter State
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
+    const { searchQuery } = useSearch();
 
     // ✅ FIX: Keep selectedTicket in sync with latest data
     useEffect(() => {
@@ -31,6 +40,66 @@ export default function TicketMonitor() {
             }
         }
     }, [tickets, selectedTicket]);
+
+    // Filtering Logic
+    const filteredTickets = useMemo(() => {
+        let result = tickets.filter(e => e.extraction_status === "VALID");
+
+        // Global Search Filtering
+        if (searchQuery) {
+            result = result.filter(ticket => ticketMatchesSearch(ticket, searchQuery));
+        }
+
+        if (!activeFilters) return result;
+
+        return result.filter((ticket) => {
+            // Status Filter logic
+            if (activeFilters.statuses.length > 0) {
+                const acceptableStatuses: string[] = [];
+                const norm = (s: string) => s?.toUpperCase() || '';
+                if (activeFilters.statuses.includes('Inbox')) acceptableStatuses.push('OPEN', 'INBOX');
+                if (activeFilters.statuses.includes('Sent')) acceptableStatuses.push('SENT');
+                if (activeFilters.statuses.includes('Order Confirmed')) acceptableStatuses.push('ORDER_CONFIRMED');
+                if (activeFilters.statuses.includes('Order Completed')) acceptableStatuses.push('ORDER_COMPLETED');
+                if (activeFilters.statuses.includes('Closed')) acceptableStatuses.push('CLOSED');
+                const currentStatus = ticket.ticket_status ? norm(ticket.ticket_status) : 'OPEN';
+                if (!acceptableStatuses.some(status => norm(status) === currentStatus)) return false;
+            }
+
+            // Urgency, Date, and Search filters
+            if (activeFilters.urgency !== 'ALL') {
+                if ((ticket.ticket_priority?.toUpperCase() || 'NON_URGENT') !== activeFilters.urgency.toUpperCase()) return false;
+            }
+            if (activeFilters.clientEmail && !ticket.sender?.toLowerCase().includes(activeFilters.clientEmail.toLowerCase())) return false;
+            if (activeFilters.assignedEmployeeName && !ticket.assigned_to?.toLowerCase().includes(activeFilters.assignedEmployeeName.toLowerCase())) return false;
+            if (activeFilters.ticketNumber && !String(ticket.id).includes(activeFilters.ticketNumber)) return false;
+            if (activeFilters.quotationReference) {
+                const hasRef = ticket.quotation_files?.some(q => (q.reference_id || '').toLowerCase().includes(activeFilters.quotationReference.toLowerCase()));
+                if (!hasRef) return false;
+            }
+
+            // Date Range Filter
+            if (activeFilters.startDate || activeFilters.endDate) {
+                const dateToCheckStr = activeFilters.dateType === 'updated' ? ticket.updated_at : (ticket.received_at || ticket.created_at);
+                if (dateToCheckStr) {
+                    const ticketDate = new Date(dateToCheckStr);
+                    if (activeFilters.startDate) {
+                        const start = new Date(activeFilters.startDate);
+                        start.setHours(0, 0, 0, 0);
+                        if (ticketDate < start) return false;
+                    }
+                    if (activeFilters.endDate) {
+                        const end = new Date(activeFilters.endDate);
+                        end.setHours(23, 59, 59, 999);
+                        if (ticketDate > end) return false;
+                    }
+                }
+            }
+
+            return true;
+        });
+    }, [tickets, activeFilters, searchQuery]);
+
 
     const getLatestQuoteInfo = (t: EmailExtraction) => {
         // Case 1: Order Confirmed -> Show CPO Amount (Blue)
@@ -57,7 +126,7 @@ export default function TicketMonitor() {
             type: 'QUOTE'
         };
     };
-    console.log("Rendering TicketMonitor with tickets:", tickets);
+
     // Helper to format date in UAE time
     const formatDate = (dateString: string) => {
         return {
@@ -89,12 +158,23 @@ export default function TicketMonitor() {
                     <Monitor size={18} className="text-blue-500" />
                     <h2 className="text-lg font-semibold text-[rgb(var(--text-primary))]">Live Monitor</h2>
                     <span className="text-xs text-[rgb(var(--text-secondary))] px-2 py-0.5 bg-[rgb(var(--bg-tertiary))] rounded-full border border-[rgb(var(--border-primary))]">
-                        {tickets.length} Tickets
+                        {filteredTickets.length} / {tickets.length} Tickets
                     </span>
                 </div>
-                <button onClick={() => refetch()} className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors">
-                    <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsFilterOpen(true)}
+                        className={`p-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm px-3
+                            ${Object.keys(activeFilters).some(k => k !== 'dateType' && JSON.stringify(activeFilters[k as keyof FilterState]) !== JSON.stringify(INITIAL_FILTERS[k as keyof FilterState]))
+                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                : 'hover:bg-[rgb(var(--hover-bg))] text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]'}`}
+                    >
+                        <Filter size={16} /> Filters
+                    </button>
+                    <button onClick={() => refetch()} className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors">
+                        <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
+                    </button>
+                </div>
             </div>
 
             <div className="overflow-auto flex-1 bg-[rgb(var(--bg-primary))]">
@@ -120,7 +200,13 @@ export default function TicketMonitor() {
                                     </div>
                                 </td>
                             </tr>
-                        ) : tickets.map((t) => {
+                        ) : filteredTickets.length === 0 ? (
+                            <tr>
+                                <td colSpan={8} className="px-4 py-8 text-center text-[rgb(var(--text-secondary))]">
+                                    No tickets found matching filters.
+                                </td>
+                            </tr>
+                        ) : filteredTickets.map((t) => {
                             const { time, date } = formatDate(t.received_at || t.created_at);
                             const latestQuote = getLatestQuoteInfo(t);
                             return (
@@ -221,6 +307,17 @@ export default function TicketMonitor() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Filter Sidebar */}
+            <FilterSidebar
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                currentFilters={activeFilters}
+                onApply={(newFilters) => {
+                    setActiveFilters(newFilters);
+                    setIsFilterOpen(false);
+                }}
+            />
 
             {/* Ticket Sidebar Modal */}
             {selectedTicket && (
