@@ -12,6 +12,7 @@ import {
     MoreVertical
 } from 'lucide-react';
 import api from '../../../lib/api';
+import DateRangePicker from '../ui/DateRangePicker';
 
 interface EmployeeStat {
     id: string;
@@ -38,16 +39,27 @@ interface EmployeeStat {
 export default function TeamWorkflowDashboard() {
     const [stats, setStats] = useState<EmployeeStat[]>([]);
     const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState('all'); // '24h' | '7d' | '30d' | 'all'
+    const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null }>({
+        startDate: null,
+        endDate: null
+    });
 
     useEffect(() => {
-        fetchStats();
-    }, [timeRange]);
+        // Only fetch if both dates are selected, or both are null (all time)
+        if ((dateRange.startDate && dateRange.endDate) || (!dateRange.startDate && !dateRange.endDate)) {
+            fetchStats();
+        }
+    }, [dateRange]);
 
     const fetchStats = async () => {
         try {
             setLoading(true);
-            const response = await api.get(`/admin/employee-stats?range=${timeRange}`);
+            const params = new URLSearchParams();
+            if (dateRange.startDate) params.append('start_date', dateRange.startDate.toISOString());
+            if (dateRange.endDate) params.append('end_date', dateRange.endDate.toISOString());
+            if (!dateRange.startDate && !dateRange.endDate) params.append('range', 'all');
+
+            const response = await api.get(`/admin/employee-stats?${params.toString()}`);
             if (response.data.success) {
                 setStats(response.data.stats);
             }
@@ -76,16 +88,11 @@ export default function TeamWorkflowDashboard() {
                         <p className="text-[rgb(var(--muted))] text-sm">Real-time ticket distribution across all stages</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <select
-                            value={timeRange}
-                            onChange={(e) => setTimeRange(e.target.value)}
-                            className="bg-[rgb(var(--panel))] text-xs font-medium border border-[rgb(var(--border))] rounded-md px-3 py-1.5 outline-none focus:border-emerald-500 cursor-pointer"
-                        >
-                            <option value="all">All Time</option>
-                            <option value="24h">Last 24 Hours</option>
-                            <option value="7d">Last 7 Days</option>
-                            <option value="30d">Last 30 Days</option>
-                        </select>
+                        <DateRangePicker
+                            startDate={dateRange.startDate}
+                            endDate={dateRange.endDate}
+                            onChange={(range) => setDateRange(range)}
+                        />
                         <div className="text-xs text-[rgb(var(--muted))] font-mono bg-[rgb(var(--panel))] px-3 py-1.5 rounded border border-[rgb(var(--border))]">
                             LIVE TRACKING
                         </div>
