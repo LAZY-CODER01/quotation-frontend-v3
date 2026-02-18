@@ -146,8 +146,30 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
               </div>
             ) : selectedOffer ? (
               <>
-                <div className="text-sm text-white font-medium pr-6">{selectedOffer.offer}</div>
-                <div className="text-xs text-gray-500 mt-1">{selectedOffer.brand}</div>
+                <div
+                  className="flex flex-col w-full pr-8"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <textarea
+                    value={selectedOffer.offer}
+                    onChange={(e) => {
+                      const newOffer = { ...selectedOffer, offer: e.target.value };
+                      onUpdate(index, { selectedMatch: newOffer });
+                    }}
+                    className="w-full bg-transparent text-sm text-white font-medium focus:outline-none resize-none overflow-hidden"
+                    rows={2}
+                    placeholder="Offer description"
+                  />
+                  <input
+                    value={selectedOffer.brand}
+                    onChange={(e) => {
+                      const newOffer = { ...selectedOffer, brand: e.target.value };
+                      onUpdate(index, { selectedMatch: newOffer });
+                    }}
+                    className="w-full bg-transparent text-xs text-gray-500 mt-1 focus:outline-none"
+                    placeholder="Brand"
+                  />
+                </div>
                 <div className="absolute top-3 right-3 text-emerald-500">
                   <Check size={14} />
                 </div>

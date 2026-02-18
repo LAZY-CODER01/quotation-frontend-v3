@@ -13,9 +13,13 @@ import {
     Mail,
     Calendar,
     X,
-    Loader2
+    Loader2,
+    Send,
+    CheckCircle2,
+    PackageCheck
 } from 'lucide-react';
 import api from '../../../lib/api';
+import DateRangePicker from '../ui/DateRangePicker';
 
 interface ClientStat {
     id: string;
@@ -27,17 +31,23 @@ interface ClientStat {
     };
     tags: string[];
     stats: {
-        quotations: number;
-        orders: number;
+        sent_count: number;
+        confirmed_count: number;
+        completed_count: number;
     };
     since: string;
-    last_active: string | null;
 }
 
 export default function ClientDashboard() {
     const [clients, setClients] = useState<ClientStat[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Date Range State
+    const [dateRange, setDateRange] = useState<{ startDate: Date | null; endDate: Date | null }>({
+        startDate: null,
+        endDate: null
+    });
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,73 +60,26 @@ export default function ClientDashboard() {
     });
 
     useEffect(() => {
-        fetchClients();
-    }, []);
+        const isRangeComplete = (dateRange.startDate && dateRange.endDate) || (!dateRange.startDate && !dateRange.endDate);
+        if (isRangeComplete) {
+            fetchClients();
+        }
+    }, [dateRange]); // Refetch when date range changes
 
     const fetchClients = async () => {
         try {
-            const [clientsResponse, ticketsResponse] = await Promise.all([
-                api.get('/admin/clients'),
-                api.get('/emails?limit=1000') // Fetch recent 1000 tickets to aggregate
-            ]);
+            setLoading(true);
+            const params = new URLSearchParams();
+            if (dateRange.startDate) params.append('start_date', dateRange.startDate.toISOString());
+            if (dateRange.endDate) params.append('end_date', dateRange.endDate.toISOString());
+            if (!dateRange.startDate && !dateRange.endDate) params.append('range', 'all');
 
-            if (clientsResponse.data.success) {
-                let clientsData: ClientStat[] = clientsResponse.data.clients;
+            const response = await api.get(`/admin/clients?${params.toString()}`);
 
-                if (ticketsResponse.data.success) {
-                    const tickets = ticketsResponse.data.data;
-
-                    // Map client emails to ticket counts
-                    const ticketCounts = new Map<string, number>();
-
-                    tickets.forEach((ticket: any) => {
-                        // Extract email from sender field if possible, or matches company name
-                        const sender = ticket.sender || '';
-                        const company = ticket.company_name || '';
-
-                        // We need to match tickets to clients. 
-                        // Strategy: Iterate clients and check if ticket belongs to them
-                        // This is O(N*M), but with <1000 items it's fine. 
-                        // Better: Pre-process tickets?? 
-                        // Actually, let's iterate clients and filter tickets for each.
-                    });
-
-                    // Update clients with local counts
-                    clientsData = clientsData.map(client => {
-                        const clientEmail = client.contact.email?.toLowerCase();
-                        const clientCompany = client.company?.toLowerCase();
-                        const clientName = client.name?.toLowerCase();
-
-                        // Count tickets that match this client
-                        const clientTicketCount = tickets.filter((ticket: any) => {
-                            const tSender = (ticket.sender || '').toLowerCase();
-                            const tCompany = (ticket.company_name || '').toLowerCase();
-
-                            // Match Logic:
-                            // 1. Email match (most accurate)
-                            if (clientEmail && tSender.includes(clientEmail)) return true;
-
-                            // 2. Exact Company Name match
-                            if (clientCompany && tCompany === clientCompany) return true;
-
-                            // 3. Sender Name approximate match?? (Risky, skip for now)
-
-                            return false;
-                        }).length;
-
-                        return {
-                            ...client,
-                            stats: {
-                                ...client.stats,
-                                orders: clientTicketCount // Override with actual ticket count
-                            }
-                        };
-                    });
-                }
-
-                setClients(clientsData);
+            if (response.data.success) {
+                setClients(response.data.clients);
             } else {
-                throw new Error(clientsResponse.data.error || 'Failed to fetch clients');
+                throw new Error(response.data.error || 'Failed to fetch clients');
             }
         } catch (err: any) {
             console.error("Error fetching data:", err);
@@ -156,8 +119,8 @@ export default function ClientDashboard() {
 
     // Aggregates
     const totalClients = clients.length;
-    const totalQuotations = clients.reduce((acc, curr) => acc + curr.stats.quotations, 0);
-    const totalOrders = clients.reduce((acc, curr) => acc + curr.stats.orders, 0);
+    const totalSent = clients.reduce((acc, curr) => acc + curr.stats.sent_count, 0);
+    const totalOrders = clients.reduce((acc, curr) => acc + curr.stats.confirmed_count, 0);
 
     return (
         <div className="min-h-screen bg-zinc-950 p-6 md:p-8 text-zinc-100 font-sans">
@@ -169,12 +132,19 @@ export default function ClientDashboard() {
                         <h1 className="text-2xl font-bold text-white mb-1">Clients</h1>
                         <p className="text-zinc-400 text-sm">Manage client relationships and history</p>
                     </div>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20"
-                    >
-                        <Plus size={18} /> Add Client
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <DateRangePicker
+                            startDate={dateRange.startDate}
+                            endDate={dateRange.endDate}
+                            onChange={(range) => setDateRange(range)}
+                        />
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-emerald-500/20"
+                        >
+                            <Plus size={18} /> Add Client
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}
@@ -190,11 +160,11 @@ export default function ClientDashboard() {
                     </div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex justify-between items-start shadow-sm">
                         <div>
-                            <p className="text-zinc-400 text-sm font-medium mb-1">Total Quotations</p>
-                            <h3 className="text-3xl font-bold text-white">{totalQuotations}</h3>
+                            <p className="text-zinc-400 text-sm font-medium mb-1">Total Sent</p>
+                            <h3 className="text-3xl font-bold text-white">{totalSent}</h3>
                         </div>
-                        <div className="p-2 bg-blue-500/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-blue-500" />
+                        <div className="p-2 bg-yellow-500/10 rounded-lg">
+                            <Send className="w-5 h-5 text-yellow-500" />
                         </div>
                     </div>
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex justify-between items-start shadow-sm">
@@ -202,8 +172,8 @@ export default function ClientDashboard() {
                             <p className="text-zinc-400 text-sm font-medium mb-1">Total Orders</p>
                             <h3 className="text-3xl font-bold text-white">{totalOrders}</h3>
                         </div>
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                            <ShoppingCart className="w-5 h-5 text-emerald-500" />
+                        <div className="p-2 bg-purple-500/10 rounded-lg">
+                            <ShoppingCart className="w-5 h-5 text-purple-500" />
                         </div>
                     </div>
                 </div>
@@ -212,24 +182,17 @@ export default function ClientDashboard() {
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm">
                     <div className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center">
                         <h2 className="text-base font-semibold text-white">Client Directory</h2>
-                        {/* Valid Search Placeholder */}
-                        {/* <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input type="text" placeholder="Search clients..." className="bg-black/20 border border-zinc-800 rounded-lg pl-9 pr-4 py-1.5 text-sm text-white focus:outline-none focus:border-zinc-700 w-64" />
-            </div> */}
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b border-zinc-800 text-zinc-500 text-xs uppercase tracking-wider bg-zinc-900/50">
-                                    <th className="px-6 py-4 font-medium">Client</th>
                                     <th className="px-6 py-4 font-medium">Company</th>
                                     <th className="px-6 py-4 font-medium">Contact</th>
-                                    <th className="px-6 py-4 font-medium text-center">Quotations</th>
-                                    <th className="px-6 py-4 font-medium text-center">Orders</th>
-                                    <th className="px-6 py-4 font-medium">Since</th>
-                                    <th className="px-6 py-4 font-medium"></th>
+                                    <th className="px-6 py-4 font-medium text-center">Quotations (Sent)</th>
+                                    <th className="px-6 py-4 font-medium text-center">Orders Received</th>
+                                    <th className="px-6 py-4 font-medium text-center">Orders Completed</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800">
@@ -242,14 +205,11 @@ export default function ClientDashboard() {
                                                         <Building size={18} />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-medium text-white">{client.name}</p>
-                                                        {/* Tags fallback */}
-                                                        {/* <p className="text-xs text-zinc-500">Preferred client</p> */}
+                                                        <p className="text-sm font-medium text-white">{client.company || 'Unknown Company'}</p>
+                                                        {/* Optional: Show client Name as secondary text if needed, but request said remove client name column */}
+                                                        {client.name && <p className="text-xs text-zinc-500">{client.name}</p>}
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-zinc-300">
-                                                {client.company || '-'}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-xs text-zinc-400 space-y-1">
@@ -266,30 +226,25 @@ export default function ClientDashboard() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-center">
-                                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700">
-                                                    {client.stats.quotations}
+                                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                                    {client.stats.sent_count}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                                                    {client.stats.confirmed_count}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                                                    {client.stats.orders}
+                                                    {client.stats.completed_count}
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-zinc-400">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar size={14} /> {client.since}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <button className="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-zinc-800">
-                                                    <MoreHorizontal size={18} />
-                                                </button>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-12 text-center text-zinc-500 text-sm">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 text-sm">
                                             No clients found. Add one to get started.
                                         </td>
                                     </tr>

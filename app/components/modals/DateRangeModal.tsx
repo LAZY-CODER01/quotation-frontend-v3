@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { X, Calendar, Search } from "lucide-react";
+import DateRangePicker, { DateRange } from "../ui/DateRangePicker";
 
 interface DateRangeModalProps {
     isOpen: boolean;
@@ -8,19 +9,19 @@ interface DateRangeModalProps {
 }
 
 export default function DateRangeModal({ isOpen, onClose }: DateRangeModalProps) {
-    const [fromDate, setFromDate] = useState("");
-    const [toDate, setToDate] = useState("");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
 
     if (!isOpen) return null;
 
     const handleSearch = () => {
-        if (!fromDate || !toDate) {
+        if (!startDate || !endDate) {
             alert("Please select both From and To dates.");
             return;
         }
 
         // Open new tab with range parameters
-        const url = `/tickets/range?from=${fromDate}&to=${toDate}`;
+        const url = `/tickets/range?from=${startDate}&to=${endDate}`;
         window.open(url, "_blank");
         onClose();
     };
@@ -42,30 +43,18 @@ export default function DateRangeModal({ isOpen, onClose }: DateRangeModalProps)
 
                 {/* Content */}
                 <div className="p-6 space-y-4">
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">From Date</label>
-                        <input
-                            type="date"
-                            value={fromDate}
-                            onChange={(e) => setFromDate(e.target.value)}
-                            className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">To Date</label>
-                        <input
-                            type="date"
-                            value={toDate}
-                            onChange={(e) => setToDate(e.target.value)}
-                            className="w-full bg-[#0A0B0D] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                        />
-                    </div>
-
+                    <DateRangePicker
+                        startDate={startDate ? new Date(startDate) : null}
+                        endDate={endDate ? new Date(endDate) : null}
+                        onChange={(range: DateRange) => {
+                            setStartDate(range.startDate ? range.startDate.toISOString() : '');
+                            setEndDate(range.endDate ? range.endDate.toISOString() : '');
+                        }}
+                    />
                     <div className="pt-2">
                         <button
                             onClick={handleSearch}
-                            disabled={!fromDate || !toDate}
+                            disabled={!startDate || !endDate}
                             className="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-all shadow-lg shadow-emerald-900/20"
                         >
                             <Search size={16} />
