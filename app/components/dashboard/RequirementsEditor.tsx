@@ -22,6 +22,7 @@ interface SearchResult {
   unit?: string;
   score: number;
   image_url?: string;
+  isManual?: boolean; // New flag for manual entries
 }
 
 // --- Helper Hook for Debounce ---
@@ -48,7 +49,37 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
   const [isOpen, setIsOpen] = useState(false);
 
   // Use matches from item if available, otherwise empty
-  const searchResults: SearchResult[] = item.matches || [];
+  // We apply the Filter and Deduplicate logic here too, in case bad data was saved
+  const rawResults: SearchResult[] = item.matches || [];
+  const searchResults = (() => {
+    const unique: SearchResult[] = [];
+    const seen = new Set<string>();
+
+    // Always include current manual selection if it exists and isn't just empty
+    // But deduplicate it against the list
+    if (item.selectedMatch && item.selectedMatch.isManual && item.selectedMatch.offer) {
+      unique.push(item.selectedMatch);
+      const normalize = (s: string) => s.trim().toLowerCase();
+      seen.add(`${normalize(item.selectedMatch.offer)}|${normalize(item.selectedMatch.brand)}|${item.selectedMatch.price}`);
+    }
+
+    for (const r of rawResults) {
+      // 1. Filter out incomplete offers (must have offer, brand, and price) UNLESS it is manual
+      if (!r.isManual) {
+        if (!r.offer || !r.offer.trim() || !r.brand || !r.brand.trim() || r.price === undefined || r.price === null || r.price === "") continue;
+      }
+
+      // 2. Filter out duplicates based on Offer + Brand + Price
+      const normalize = (s: string) => s.trim().toLowerCase();
+      const offerKey = `${normalize(r.offer)}|${normalize(r.brand)}|${r.price}`;
+
+      if (!seen.has(offerKey)) {
+        seen.add(offerKey);
+        unique.push(r);
+      }
+    }
+    return unique;
+  })();
 
   // Logic to determine which offer is "selected"
   // ONLY show if the user has explicitly selected a match (persisted in selectedMatch).
@@ -75,9 +106,27 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
         const data = await res.json();
 
         if (data.success && data.results.length > 0) {
+          // Filter and Deduplicate
+          const uniqueResults: SearchResult[] = [];
+          const seenOffers = new Set<string>();
+
+          for (const result of data.results) {
+            // 1. Filter out incomplete offers (must have offer, brand, and price)
+            if (!result.offer || !result.offer.trim() || !result.brand || !result.brand.trim() || result.price === undefined || result.price === null || result.price === "") continue;
+
+            // 2. Filter out duplicates based on Offer + Brand + Price
+            const normalize = (s: string) => s.trim().toLowerCase();
+            const offerKey = `${normalize(result.offer)}|${normalize(result.brand)}|${result.price}`;
+
+            if (!seenOffers.has(offerKey)) {
+              seenOffers.add(offerKey);
+              uniqueResults.push(result);
+            }
+          }
+
           // Save matches to parent state
           // Note calling onUpdate here updates matches only
-          onUpdate(index, { matches: data.results });
+          onUpdate(index, { matches: uniqueResults });
 
           // WE NO LONGER AUTO-SELECT or AUTO-FILL
           // User must manually select from the dropdown.
@@ -95,11 +144,25 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
   }, [debouncedDescription, item.matches]); // Depend on item.matches so we stop if it gets populated
 
   const handleSelectOffer = (offer: SearchResult) => {
+    // 1. If we are switching AWAY from a manual entry, save it to the matches list so we can switch back
+    let updatedMatches = [...(item.matches || [])];
+    if (selectedOffer && selectedOffer.isManual && selectedOffer.offer) {
+      // Only add if not already in there (check by reference or value?)
+      // Let's just push it, the deduplication in render handles display
+      // But we modify the state array, so array grows. 
+      // Let's check if we already have this exact object or similar.
+      const isDuplicate = updatedMatches.some(m => m.offer === selectedOffer.offer && m.brand === selectedOffer.brand && m.price == selectedOffer.price);
+      if (!isDuplicate) {
+        updatedMatches.unshift(selectedOffer); // Add to top
+      }
+    }
+
     // Call onUpdate ONCE with all fields to avoid race conditions
     onUpdate(index, {
       "Unit price": String(offer.price),
       "Unit": offer.unit || item.Unit,
-      "selectedMatch": offer
+      "selectedMatch": offer,
+      matches: updatedMatches // Update matches list
     });
     setIsOpen(false);
   };
@@ -144,40 +207,43 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
               <div className="flex items-center gap-2 text-gray-500 text-sm">
                 <Loader2 size={14} className="animate-spin" /> Searching...
               </div>
-            ) : selectedOffer ? (
+            ) : (
               <>
                 <div
                   className="flex flex-col w-full pr-8"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <textarea
-                    value={selectedOffer.offer}
+                    value={selectedOffer?.offer || ""}
                     onChange={(e) => {
-                      const newOffer = { ...selectedOffer, offer: e.target.value };
+                      // Init empty object if null
+                      const currentOffer = selectedOffer || { offer: "", brand: "", price: 0, score: 0, requirement: "", row_number: 0, currency: "" };
+                      const newOffer = { ...currentOffer, offer: e.target.value, isManual: true }; // Set isManual
                       onUpdate(index, { selectedMatch: newOffer });
                     }}
                     className="w-full bg-transparent text-sm text-white font-medium focus:outline-none resize-none overflow-hidden"
                     rows={2}
-                    placeholder="Offer description"
+                    placeholder="Type offer description..."
                   />
                   <input
-                    value={selectedOffer.brand}
+                    value={selectedOffer?.brand || ""}
                     onChange={(e) => {
-                      const newOffer = { ...selectedOffer, brand: e.target.value };
+                      // Init empty object if null
+                      const currentOffer = selectedOffer || { offer: "", brand: "", price: 0, score: 0, requirement: "", row_number: 0, currency: "" };
+                      const newOffer = { ...currentOffer, brand: e.target.value, isManual: true }; // Set isManual
                       onUpdate(index, { selectedMatch: newOffer });
                     }}
                     className="w-full bg-transparent text-xs text-gray-500 mt-1 focus:outline-none"
                     placeholder="Brand"
                   />
                 </div>
-                <div className="absolute top-3 right-3 text-emerald-500">
-                  <Check size={14} />
-                </div>
+                {/* Only show check if actually has data */}
+                {selectedOffer && selectedOffer.offer && (
+                  <div className="absolute top-3 right-3 text-emerald-500">
+                    <Check size={14} />
+                  </div>
+                )}
               </>
-            ) : (
-              <div className="text-gray-600 text-sm italic">
-                {searchResults.length > 0 ? "Select a match..." : "No matches found"}
-              </div>
             )}
 
             <ChevronDown size={14} className={`absolute bottom-3 right-3 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -185,29 +251,55 @@ const RequirementRow = ({ index, item, onUpdate, onDelete }: RequirementRowProps
 
           {/* Dropdown/Popover for Alternatives */}
           {isOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A1D24] border border-white/10 rounded-lg shadow-2xl z-20 max-h-[300px] overflow-y-auto">
-              {searchResults.length > 0 ? (
-                <div className="divide-y divide-white/5">
-                  {searchResults.map((res, i) => (
-                    <div
-                      key={i}
-                      onClick={() => handleSelectOffer(res)}
-                      className="p-3 hover:bg-white/5 cursor-pointer transition-colors flex justify-between items-start gap-3"
-                    >
-                      <div className="flex-1">
-                        <div className="text-sm text-gray-200">{res.offer}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{res.brand}</div>
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A1D24] border border-white/10 rounded-lg shadow-2xl z-20 overflow-hidden flex flex-col">
+              <div className="max-h-[250px] overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  <div className="divide-y divide-white/5">
+                    {searchResults.map((res, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleSelectOffer(res)}
+                        className={`p-3 hover:bg-white/5 cursor-pointer transition-colors flex justify-between items-start gap-3 ${res.isManual ? 'bg-emerald-500/10' : ''}`}
+                      >
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-200">
+                            {res.isManual && <span className="text-[10px] bg-emerald-500 text-black px-1 rounded mr-2 font-bold">MANUAL</span>}
+                            {res.offer}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">{res.brand}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-emerald-400 text-sm font-mono">{res.price}</div>
+                          <div className="text-[10px] text-gray-600">{(res.score * 100).toFixed(0)}% Match</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-emerald-400 text-sm font-mono">{res.price}</div>
-                        <div className="text-[10px] text-gray-600">{(res.score * 100).toFixed(0)}% Match</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-gray-500 text-sm">No results found</div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-500 text-sm">No results found</div>
+                )}
+              </div>
+
+              {/* Sticky Footer */}
+              <div className="p-2 border-t border-white/5 bg-[#1A1D24]">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Always start with a completely blank manual entry
+                    onUpdate(index, {
+                      selectedMatch: {
+                        offer: "", brand: "", price: 0, score: 0,
+                        requirement: item.Description || "", row_number: 0, currency: "",
+                        isManual: true
+                      }
+                    });
+                    setIsOpen(false);
+                  }}
+                  className="w-full py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus size={12} /> Add Manual Entry
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -257,10 +349,10 @@ export default function RequirementsEditor({ ticket, onBack, onSave }: Requireme
       const newItems = [...prevItems];
       const item = { ...newItems[index] };
 
-      // If description changed, clear matches
+      // If description changed, clear matches but KEEP selectedMatch (manual entry)
       if (updates.Description !== undefined && updates.Description !== item.Description) {
         item.matches = undefined;
-        item.selectedMatch = undefined;
+        // item.selectedMatch = undefined; // <--- REMOVED: Don't clear manual offer
       }
 
       // Apply all updates
@@ -283,8 +375,16 @@ export default function RequirementsEditor({ ticket, onBack, onSave }: Requireme
   const saveChanges = async () => {
     setSaving(true);
     try {
-      await api.post('/ticket/update-requirements', { gmail_id: ticket.gmail_id, requirements: items });
-      onSave(items);
+      // Strip 'matches' to save space BUT keep manual entries (isManual=true)
+      const sanitizedItems = items.map(item => ({
+        ...item,
+        matches: item.matches,
+        // Ensure selectedMatch is preserved if it has content
+        selectedMatch: item.selectedMatch && item.selectedMatch.offer ? item.selectedMatch : undefined
+      }));
+
+      await api.post('/ticket/update-requirements', { gmail_id: ticket.gmail_id, requirements: sanitizedItems });
+      onSave(items); // Keep local state full (with matches if any) for smooth UI
       onBack();
     } catch (error) {
       console.error("Save failed", error);

@@ -170,13 +170,16 @@ export default function DashboardPage() {
 
   const handleRequirementsSaved = (newReqs: ExtractionRequirement[]) => {
     if (!selectedTicket) return;
-    setSelectedTicket(prev => prev ? ({
-      ...prev,
+    const update = (t: EmailExtraction) => ({
+      ...t,
       extraction_result: {
-        ...prev.extraction_result,
+        ...(t.extraction_result || {}),
         Requirements: newReqs
       }
-    }) : null);
+    });
+
+    setSelectedTicket(prev => prev ? update(prev) : null);
+    updateTicketInCache(update);
   };
 
   // --- Render ---
