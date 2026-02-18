@@ -3,10 +3,11 @@
 import SidebarItem from "./SidebarItem";
 import {
     Ticket, LogOut, ClipboardCheck, Mail,
-    Users as UsersIcon, Monitor, ChevronLeft, ChevronRight, Building
+    Users as UsersIcon, Monitor, ChevronLeft, ChevronRight, Building,
+    UserCog
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "../../../context/AuthContext"; // Adjust path as needed
+import { useAuth } from "../../../context/AuthContext";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Sidebar() {
@@ -15,13 +16,11 @@ export default function Sidebar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // Fix Hydration mismatch
     const [isMounted, setIsMounted] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-        // Load collapsed state from local storage if needed
         const savedState = localStorage.getItem("sidebarCollapsed");
         if (savedState) setIsCollapsed(savedState === "true");
     }, []);
@@ -32,7 +31,6 @@ export default function Sidebar() {
         localStorage.setItem("sidebarCollapsed", String(newState));
     };
 
-    // Helper to check active state including query params
     const isActive = (path: string, view?: string) => {
         if (pathname !== path) return false;
         if (view) return searchParams.get("view") === view;
@@ -78,16 +76,19 @@ export default function Sidebar() {
                         active={pathname === '/' && !searchParams.get("view")}
                         collapsed={isCollapsed}
                     />
-                    {user?.role === 'USER' && (
+
+                    {/* My Profile — only for non-admin users, right below All Tickets */}
+                    {isMounted && user?.role !== 'ADMIN' && (
                         <SidebarItem
-                            icon={<UsersIcon size={18} />}
+                            icon={<UserCog size={18} />}
                             label="My Profile"
                             onClick={() => router.push('/profile')}
                             active={pathname === '/profile'}
                             collapsed={isCollapsed}
                         />
                     )}
-                    {/* Admin Section - Only visible to Admins */}
+
+                    {/* Admin Section */}
                     {isMounted && user?.role === 'ADMIN' && (
                         <>
                             {!isCollapsed && (
@@ -157,7 +158,6 @@ export default function Sidebar() {
                         collapsed={isCollapsed}
                     />
 
-                    {/* Toggle Button */}
                     <button
                         onClick={toggleSidebar}
                         className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[rgb(var(--text-secondary))] hover:bg-[rgb(var(--hover-bg))] hover:text-[rgb(var(--text-primary))] transition-colors ${isCollapsed ? 'justify-center w-full' : 'w-full'}`}
