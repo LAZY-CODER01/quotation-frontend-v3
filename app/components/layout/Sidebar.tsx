@@ -4,7 +4,7 @@ import SidebarItem from "./SidebarItem";
 import {
     Ticket, LogOut, ClipboardCheck, Mail,
     Users as UsersIcon, Monitor, ChevronLeft, ChevronRight, Building,
-    UserCog
+    UserCog, BarChart3
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
@@ -111,6 +111,14 @@ export default function Sidebar() {
                                 label="Employees"
                                 onClick={() => router.push('/admin/employees')}
                                 active={pathname === '/admin/employees'}
+                                collapsed={isCollapsed}
+                            />
+
+                            <SidebarItem
+                                icon={<BarChart3 size={18} />}
+                                label="Employee Analytics"
+                                onClick={() => router.push('/admin/analytics')}
+                                active={pathname === '/admin/analytics'}
                                 collapsed={isCollapsed}
                             />
 

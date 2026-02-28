@@ -27,7 +27,7 @@ export default function TicketMonitor() {
     const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
     const { searchQuery } = useSearch();
 
-    // ✅ FIX: Keep selectedTicket in sync with latest data
+    //   FIX: Keep selectedTicket in sync with latest data
     useEffect(() => {
         if (selectedTicket && tickets.length > 0) {
             const updated = tickets.find(t => t.gmail_id === selectedTicket.gmail_id);
@@ -236,19 +236,18 @@ export default function TicketMonitor() {
 
                                     {/* Company */}
                                     <td className="px-4 py-3">
-                                        <div className="text-[rgb(var(--text-primary))] font-medium truncate max-w-[180px]" title={t.sender}>
-                                            {/* Extracting name from "Name <email>" if possible, purely presentational logic */}
-                                            {t.sender.includes('<') ? t.sender.split('<')[0].replace(/"/g, '') : t.sender.split('@')[0]}
+                                        <div className="text-[rgb(var(--text-primary))] font-medium truncate max-w-[180px]" title={t.company_name || t.sender}>
+                                            {t.company_name || (t.sender.includes('<') ? t.sender.split('<')[0].replace(/"/g, '').trim() : t.sender.split('@')[0])}
                                         </div>
                                     </td>
 
                                     {/* Email / Subject */}
                                     <td className="px-4 py-3">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-[rgb(var(--text-secondary))] truncate max-w-[250px]">
+                                            <span className="text-xs text-[rgb(var(--text-secondary))] truncate max-w-[250px]" title={t.sender}>
                                                 {t.sender.includes('<') ? t.sender.match(/<([^>]+)>/)?.[1] : t.sender}
                                             </span>
-                                            <span className="text-[rgb(var(--text-primary))] text-xs truncate max-w-[300px] group-hover:text-blue-400 transition-colors">
+                                            <span className="text-[rgb(var(--text-primary))] text-xs truncate max-w-[300px] group-hover:text-blue-400 transition-colors" title={t.subject}>
                                                 {t.subject}
                                             </span>
                                         </div>
