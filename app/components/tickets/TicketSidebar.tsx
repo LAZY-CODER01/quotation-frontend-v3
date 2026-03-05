@@ -70,6 +70,7 @@ export default function TicketSidebar({
   const [currentStatus, setCurrentStatus] = useState("");
   const [noteText, setNoteText] = useState("");
   const [isSendingNote, setIsSendingNote] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
@@ -194,9 +195,13 @@ export default function TicketSidebar({
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!ticket) return;
+    if (!ticket || isDownloading) return;
+    setIsDownloading(true);
     try {
-      const response = await api.get(`/quotation/generate/${ticket.gmail_id}`, { responseType: 'blob' });
+      const response = await api.get(`/quotation/generate/${ticket.gmail_id}`, {
+        responseType: 'blob',
+        timeout: 10 * 60 * 1000, // 10 minutes for large quotations
+      });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -206,7 +211,9 @@ export default function TicketSidebar({
       link.remove();
     } catch (error) {
       console.error("Download failed", error);
-      alert("Failed to download quotation.");
+      alert("Failed to download quotation. The file may be too large — please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -583,7 +590,7 @@ export default function TicketSidebar({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2"><FileText size={18} className="text-[rgb(var(--text-secondary))]" /><span className="font-medium text-[rgb(var(--text-primary))]">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
               <div className="flex gap-2">
-                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition-colors"><Download size={12} /> Excel</button>) : <span className="text-[10px] font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-wider">Irrelevant</span>}
+                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} disabled={isDownloading} className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded transition-colors ${isDownloading ? 'text-yellow-400 bg-yellow-500/10 cursor-wait' : 'text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'}`}>{isDownloading ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Download size={12} /> Excel</>}</button>) : <span className="text-[10px] font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-wider">Irrelevant</span>}
                 <button onClick={onEditRequirements} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"><Maximize2 size={14} /> View</button>
               </div>
             </div>
