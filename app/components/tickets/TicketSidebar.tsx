@@ -200,8 +200,17 @@ export default function TicketSidebar({
     try {
       const response = await api.get(`/quotation/generate/${ticket.gmail_id}`, {
         responseType: 'blob',
-        timeout: 10 * 60 * 1000, // 10 minutes for large quotations
+        timeout: 100 * 60 * 1000, // 100 minutes for large quotations
       });
+
+      // Check if backend returned an error JSON instead of a file
+      if (response.data.type === 'application/json') {
+        const text = await response.data.text();
+        const errData = JSON.parse(text);
+        alert("Failed to generate: " + (errData.error || "Unknown error"));
+        return;
+      }
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -209,9 +218,20 @@ export default function TicketSidebar({
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Download failed", error);
-      alert("Failed to download quotation. The file may be too large — please try again.");
+      // Try to read error from blob response
+      if (error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          const errData = JSON.parse(text);
+          alert("Failed to generate: " + (errData.error || "Unknown server error"));
+        } catch {
+          alert("Failed to download quotation. Please try again.");
+        }
+      } else {
+        alert("Failed to download quotation: " + (error.message || "Network error"));
+      }
     } finally {
       setIsDownloading(false);
     }
