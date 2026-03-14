@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import api from '../../../lib/api';
 import {
     BarChart3,
@@ -19,6 +19,8 @@ import {
     Loader2,
     AlertCircle,
 } from 'lucide-react';
+import TicketSidebar from '../tickets/TicketSidebar';
+import { EmailExtraction } from '../../../types/email';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +58,7 @@ interface WorkloadData {
 
 interface TicketRow {
     id: string;
+    gmail_id: string;
     company: string;
     email: string;
     status: string;
@@ -122,6 +125,30 @@ export default function EmployeeAnalytics() {
     const startDateRef = useRef<HTMLInputElement>(null);
     const endDateRef = useRef<HTMLInputElement>(null);
 
+    // Ticket Sidebar
+    const [selectedFullTicket, setSelectedFullTicket] = useState<EmailExtraction | null>(null);
+    const [fetchingSidebarId, setFetchingSidebarId] = useState<string | null>(null);
+
+    const handleTicketClick = useCallback(async (ticket: TicketRow) => {
+        setFetchingSidebarId(ticket.id);
+        try {
+            const res = await api.get('/emails');
+            if (res.data?.success && Array.isArray(res.data.data)) {
+                const match: EmailExtraction | undefined = res.data.data.find(
+                    (t: EmailExtraction) =>
+                        t.gmail_id === ticket.gmail_id ||
+                        t.ticket_number === ticket.id ||
+                        String(t.id) === ticket.id
+                );
+                if (match) setSelectedFullTicket(match);
+            }
+        } catch (e) {
+            console.error('Failed to fetch ticket for sidebar', e);
+        } finally {
+            setFetchingSidebarId(null);
+        }
+    }, []);
+
     // ── Fetch employee list on mount ──
     useEffect(() => {
         async function fetchEmployees() {
@@ -130,12 +157,14 @@ export default function EmployeeAnalytics() {
                 const res = await api.get('/admin/users');
                 if (res.data?.success && res.data.users) {
                     const allUsers: Employee[] = res.data.users;
-                    setEmployees(allUsers);
-                    // Select first non-admin user by default (they have tickets)
-                    const firstNonAdmin = allUsers.find(u => u.role !== 'ADMIN') || allUsers[0];
-                    if (firstNonAdmin) {
-                        setSelectedEmployee(firstNonAdmin);
-                    }
+                    const allOption: Employee = {
+                        id: 'all',
+                        username: 'All Employees',
+                        employee_code: 'ALL',
+                        role: 'ALL'
+                    };
+                    setEmployees([allOption, ...allUsers]);
+                    setSelectedEmployee(allOption);
                 }
             } catch (err: any) {
                 setError(err?.response?.data?.error || 'Failed to load employees');
@@ -158,15 +187,82 @@ export default function EmployeeAnalytics() {
             if (startDate) params.start_date = startDate;
             if (endDate) params.end_date = endDate;
 
-            const res = await api.get(`/admin/employee-analytics/${selectedEmployee.id}`, { params });
+            const endpoint = selectedEmployee.id === 'all'
+                ? '/admin/employee-analytics-all'
+                : `/admin/employee-analytics/${selectedEmployee.id}`;
+            const res = await api.get(endpoint, { params });
 
             if (res.data?.success) {
-                setAnalyticsData({
-                    kpis: res.data.kpis || {},
-                    funnel: res.data.funnel || [],
-                    workload: res.data.workload || {},
-                    tickets: res.data.tickets || [],
-                });
+                if (selectedEmployee.id === 'all') {
+                    // The all-employees endpoint returns { team_kpis, employees }
+                    const teamKpis = res.data.team_kpis || {};
+                    const employees = res.data.employees || [];
+                    // Map employees into ticket-like rows so the aggregation table works
+                    const ticketRows = employees.flatMap((emp: any) => {
+                        // Create a synthetic row per employee so aggregatedByEmployee picks it up
+                        const rows: TicketRow[] = [];
+                        const statusCounts = [
+                            { count: emp.inbox || 0, status: 'INBOX' },
+                            { count: emp.quotesSent || 0, status: 'SENT' },
+                            { count: emp.ordersConfirmed || 0, status: 'ORDER_CONFIRMED' },
+                            { count: emp.closedDelivered || 0, status: 'CLOSED' },
+                        ];
+                        for (const sc of statusCounts) {
+                            for (let i = 0; i < sc.count; i++) {
+                                rows.push({
+                                    id: `${emp.username}-${sc.status}-${i}`,
+                                    gmail_id: '',
+                                    company: '',
+                                    email: '',
+                                    status: sc.status,
+                                    statusColor: 'blue',
+                                    quoteRef: '',
+                                    cpoRef: '',
+                                    lines: 0,
+                                    quoteAmt: i === 0 && sc.status === 'SENT' ? (emp.quoteValue || 'AED 0') : 'AED 0',
+                                    cpoAmt: i === 0 && sc.status === 'ORDER_CONFIRMED' ? (emp.orderValue || 'AED 0') : 'AED 0',
+                                    assigned: emp.username,
+                                    sent: '',
+                                    confirmed: '',
+                                    closed: '',
+                                });
+                            }
+                        }
+                        return rows;
+                    });
+                    setAnalyticsData({
+                        kpis: {
+                            ticketsCameIn: teamKpis.ticketsCameIn || 0,
+                            quotesSent: teamKpis.quotesSent || 0,
+                            ordersConfirmed: teamKpis.ordersConfirmed || 0,
+                            closedDelivered: teamKpis.closedDelivered || 0,
+                            lineItemsQuoted: 0,
+                            quoteValue: teamKpis.quoteValue || 'AED 0',
+                            orderValue: teamKpis.orderValue || 'AED 0',
+                            sentRate: teamKpis.sentRate || '0%',
+                            convRate: teamKpis.convRate || '0%',
+                        },
+                        funnel: [
+                            { label: 'Tickets Came In', value: teamKpis.ticketsCameIn || 0, sub: null, color: 'emerald' },
+                            { label: 'Quotes Sent', value: teamKpis.quotesSent || 0, sub: teamKpis.sentRate || '0%', color: 'blue' },
+                            { label: 'Orders Confirmed', value: teamKpis.ordersConfirmed || 0, sub: null, color: 'amber' },
+                            { label: 'Closed / Delivered', value: teamKpis.closedDelivered || 0, sub: null, color: 'emerald' },
+                        ],
+                        workload: {
+                            lineItems: { value: '0', avg: 'Team aggregate' },
+                            quoteValue: { value: teamKpis.quoteValue || 'AED 0', avg: 'Team total' },
+                            orderValue: { value: teamKpis.orderValue || 'AED 0', avg: 'Team total' },
+                        },
+                        tickets: ticketRows,
+                    });
+                } else {
+                    setAnalyticsData({
+                        kpis: res.data.kpis || {},
+                        funnel: res.data.funnel || [],
+                        workload: res.data.workload || {},
+                        tickets: res.data.tickets || [],
+                    });
+                }
             } else {
                 setError(res.data?.error || 'Failed to load analytics');
             }
@@ -181,6 +277,11 @@ export default function EmployeeAnalytics() {
         fetchAnalytics();
     }, [fetchAnalytics]);
 
+    // Refetch analytics when sidebar closes
+    const handleTicketUpdate = useCallback(() => {
+        fetchAnalytics();
+    }, [fetchAnalytics]);
+
     // ── Client-side ticket filtering ──
     const filteredTickets = (analyticsData?.tickets || []).filter((t) => {
         const matchTab =
@@ -191,9 +292,55 @@ export default function EmployeeAnalytics() {
         const matchSearch =
             !searchQuery ||
             t.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            t.id.toLowerCase().includes(searchQuery.toLowerCase());
+            t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.assigned?.toLowerCase().includes(searchQuery.toLowerCase());
         return matchTab && matchSearch;
     });
+
+    // When showing "All Employees" we aggregate the tickets by assigned user and
+    // present a summary list so the admin can drill into an individual employee.
+    const aggregatedByEmployee = useMemo(() => {
+        if (selectedEmployee?.id !== 'all') return [];
+        const groups: Record<string, {
+            name: string;
+            cameIn: number;
+            sent: number;
+            confirmed: number;
+            closed: number;
+            lineItems: number;
+            quoteValue: number;
+            orderValue: number;
+        }> = {};
+        filteredTickets.forEach((t) => {
+            const name = t.assigned || 'Unassigned';
+            if (!groups[name]) {
+                groups[name] = {
+                    name,
+                    cameIn: 0,
+                    sent: 0,
+                    confirmed: 0,
+                    closed: 0,
+                    lineItems: 0,
+                    quoteValue: 0,
+                    orderValue: 0,
+                };
+            }
+            groups[name].cameIn += 1;
+            if (t.status.toUpperCase().includes('SENT') || t.status.toUpperCase() === 'ORDER_CONFIRMED' || t.status.toUpperCase() === 'ORDER_COMPLETED' || t.status.toUpperCase() === 'CLOSED') {
+                groups[name].sent += 1;
+            }
+            if (t.status.toUpperCase() === 'ORDER_CONFIRMED' || t.status.toUpperCase() === 'ORDER_COMPLETED' || t.status.toUpperCase() === 'CLOSED') {
+                groups[name].confirmed += 1;
+            }
+            if (t.status.toUpperCase() === 'CLOSED' || t.status.toUpperCase() === 'ORDER_COMPLETED') {
+                groups[name].closed += 1;
+            }
+            groups[name].lineItems += t.lines || 0;
+            groups[name].quoteValue += parseFloat(t.quoteAmt?.replace(/[^0-9.]/g, '') || '0');
+            groups[name].orderValue += parseFloat(t.cpoAmt?.replace(/[^0-9.]/g, '') || '0');
+        });
+        return Object.values(groups);
+    }, [filteredTickets, selectedEmployee]);
 
     // Funnel bar widths
     const maxFunnel = analyticsData?.funnel?.[0]?.value || 1;
@@ -485,45 +632,117 @@ export default function EmployeeAnalytics() {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
-                                    <th className="px-5 py-3 font-semibold">Ticket ID</th>
-                                    <th className="px-4 py-3 font-semibold">Company</th>
-                                    <th className="px-4 py-3 font-semibold">Email</th>
-                                    <th className="px-4 py-3 font-semibold">Status</th>
-                                    <th className="px-4 py-3 font-semibold">Quote Ref</th>
-                                    <th className="px-4 py-3 font-semibold">CPO Ref</th>
-                                    <th className="px-4 py-3 font-semibold text-right">Quote Amt</th>
-                                    <th className="px-4 py-3 font-semibold text-right">CPO Amt</th>
-                                    <th className="px-4 py-3 font-semibold">Assigned</th>
-                                    <th className="px-4 py-3 font-semibold">Sent</th>
-                                    <th className="px-4 py-3 font-semibold">Confirmed</th>
-                                    <th className="px-4 py-3 font-semibold">Closed</th>
-                                </tr>
+                                {selectedEmployee?.id === 'all' ? (
+                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
+                                        <th className="px-5 py-3 font-semibold">Employee</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Came In</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Sent</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Confirmed</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Closed</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Sent %</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Conv %</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Line Items</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Quote Val</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Order Val</th>
+                                        <th className="px-4 py-3 font-semibold">Action</th>
+                                    </tr>
+                                ) : (
+                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
+                                        <th className="px-5 py-3 font-semibold">Ticket ID</th>
+                                        <th className="px-4 py-3 font-semibold">Company</th>
+                                        <th className="px-4 py-3 font-semibold">Status</th>
+                                        <th className="px-4 py-3 font-semibold">Quote Ref</th>
+                                        <th className="px-4 py-3 font-semibold">CPO Ref</th>
+                                        <th className="px-4 py-3 font-semibold text-right">Quote Amt</th>
+                                        <th className="px-4 py-3 font-semibold text-right">CPO Amt</th>
+                                        <th className="px-4 py-3 font-semibold">Assigned</th>
+                                        <th className="px-4 py-3 font-semibold">Sent</th>
+                                        <th className="px-4 py-3 font-semibold">Confirmed</th>
+                                        <th className="px-4 py-3 font-semibold">Closed</th>
+                                    </tr>
+                                )}
                             </thead>
                             <tbody className="divide-y divide-[rgb(var(--border-primary))]">
-                                {filteredTickets.map((ticket) => (
-                                    <tr
-                                        key={ticket.id}
-                                        className="hover:bg-[rgb(var(--hover-bg))] transition-colors"
-                                    >
-                                        <td className="px-5 py-3.5 text-xs font-semibold text-emerald-400">{ticket.id}</td>
-                                        <td className="px-4 py-3.5 text-xs">{ticket.company}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))]">{ticket.email}</td>
-                                        <td className="px-4 py-3.5"><StatusBadge status={ticket.status} color={ticket.statusColor} /></td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))]">{ticket.quoteRef}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))]">{ticket.cpoRef}</td>
-                                        <td className="px-4 py-3.5 text-xs text-right font-medium text-amber-400">{ticket.quoteAmt}</td>
-                                        <td className="px-4 py-3.5 text-xs text-right font-medium text-emerald-400">{ticket.cpoAmt}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.assigned}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.sent}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.confirmed}</td>
-                                        <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.closed}</td>
-                                    </tr>
-                                ))}
-                                {filteredTickets.length === 0 && (
+                                {selectedEmployee?.id === 'all' ? (
+                                    aggregatedByEmployee.map((group) => {
+                                        const empObj = employees.find((e) => e.username === group.name);
+                                        const clickable = Boolean(empObj) && group.name !== 'Unassigned';
+                                        const sentRate = group.cameIn > 0 ? ((group.sent / group.cameIn) * 100).toFixed(1) : '0.0';
+                                        const convRate = group.sent > 0 ? ((group.confirmed / group.sent) * 100).toFixed(1) : '0.0';
+                                        return (
+                                            <tr
+                                                key={group.name}
+                                                className={`hover:bg-[rgb(var(--hover-bg))] transition-colors ${clickable ? 'cursor-pointer' : ''}`}
+                                                onClick={() => {
+                                                    if (clickable) {
+                                                        setSelectedEmployee(empObj ?? null);
+                                                        setDropdownOpen(false);
+                                                    }
+                                                }}
+                                            >
+                                                <td className="px-5 py-3.5 text-xs font-medium">{group.name}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-emerald-300">{group.cameIn}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-blue-300">{group.sent}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-amber-300">{group.confirmed}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-emerald-200">{group.closed}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-sky-300 font-medium">{sentRate}%</td>
+                                                <td className="px-4 py-3.5 text-xs text-right font-medium" style={{
+                                                    color: parseFloat(convRate) >= 50 ? '#86efac' : parseFloat(convRate) >= 30 ? '#fbbf24' : '#ef4444'
+                                                }}>{convRate}%</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-violet-300">{group.lineItems}</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-cyan-300 font-semibold">AED {(group.quoteValue / 1000).toFixed(1)}K</td>
+                                                <td className="px-4 py-3.5 text-xs text-right text-teal-300 font-semibold">AED {(group.orderValue / 1000).toFixed(1)}K</td>
+                                                <td className="px-4 py-3.5 text-xs">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (empObj) {
+                                                                setSelectedEmployee(empObj);
+                                                                setDropdownOpen(false);
+                                                            }
+                                                        }}
+                                                        className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                ) : (
+                                    filteredTickets.map((ticket) => (
+                                        <tr
+                                            key={ticket.id}
+                                            onClick={() => handleTicketClick(ticket)}
+                                            className="hover:bg-[rgb(var(--hover-bg))] transition-colors cursor-pointer"
+                                        >
+                                            <td className="px-5 py-3.5 text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                                                {fetchingSidebarId === ticket.id
+                                                    ? <><Loader2 size={10} className="animate-spin" /> {ticket.id}</>
+                                                    : ticket.id
+                                                }
+                                            </td>
+                                            {/* Company + Email */}
+                                            <td className="px-4 py-3.5 text-xs max-w-[200px]">
+                                                <div className="font-medium truncate">{ticket.company}</div>
+                                                <div className="text-[10px] text-[rgb(var(--text-tertiary))] truncate mt-0.5">{ticket.email}</div>
+                                            </td>
+                                            <td className="px-4 py-3.5"><StatusBadge status={ticket.status} color={ticket.statusColor} /></td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))]">{ticket.quoteRef}</td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))]">{ticket.cpoRef}</td>
+                                            <td className="px-4 py-3.5 text-xs text-right font-medium text-amber-400">{ticket.quoteAmt}</td>
+                                            <td className="px-4 py-3.5 text-xs text-right font-medium text-emerald-400">{ticket.cpoAmt}</td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.assigned}</td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.sent}</td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.confirmed}</td>
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">{ticket.closed}</td>
+                                        </tr>
+                                    ))
+                                )}
+                                {(selectedEmployee?.id === 'all' ? aggregatedByEmployee.length : filteredTickets.length) === 0 && (
                                     <tr>
-                                        <td colSpan={12} className="px-5 py-8 text-center text-xs text-[rgb(var(--text-tertiary))]">
-                                            {analyticsLoading ? 'Loading tickets...' : 'No tickets match the current filter.'}
+                                        <td colSpan={selectedEmployee?.id === 'all' ? 11 : 11} className="px-5 py-8 text-center text-xs text-[rgb(var(--text-tertiary))]">
+                                            {analyticsLoading ? (selectedEmployee?.id === 'all' ? 'Loading employees...' : 'Loading tickets...') : 'No items match the current filter.'}
                                         </td>
                                     </tr>
                                 )}
@@ -533,6 +752,20 @@ export default function EmployeeAnalytics() {
                 </div>
 
             </div>
+
+            {/* ── Ticket Sidebar ─────────────────────────────────────────── */}
+            {selectedFullTicket && (
+                <TicketSidebar
+                    ticket={selectedFullTicket}
+                    isOpen={!!selectedFullTicket}
+                    onClose={() => setSelectedFullTicket(null)}
+                    onUpdate={() => {
+                        // Optionally refresh analytics after update
+                        fetchAnalytics();
+                    }}
+                />
+            )}
+
         </div>
     );
 }

@@ -198,19 +198,7 @@ export default function TicketSidebar({
     if (!ticket || isDownloading) return;
     setIsDownloading(true);
     try {
-      const response = await api.get(`/quotation/generate/${ticket.gmail_id}`, {
-        responseType: 'blob',
-        timeout: 100 * 60 * 1000, // 100 minutes for large quotations
-      });
-
-      // Check if backend returned an error JSON instead of a file
-      if (response.data.type === 'application/json') {
-        const text = await response.data.text();
-        const errData = JSON.parse(text);
-        alert("Failed to generate: " + (errData.error || "Unknown error"));
-        return;
-      }
-
+      const response = await api.get(`/quotation/generate/${ticket.gmail_id}`, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -218,20 +206,9 @@ export default function TicketSidebar({
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Download failed", error);
-      // Try to read error from blob response
-      if (error.response?.data instanceof Blob) {
-        try {
-          const text = await error.response.data.text();
-          const errData = JSON.parse(text);
-          alert("Failed to generate: " + (errData.error || "Unknown server error"));
-        } catch {
-          alert("Failed to download quotation. Please try again.");
-        }
-      } else {
-        alert("Failed to download quotation: " + (error.message || "Network error"));
-      }
+      alert("Failed to download quotation.");
     } finally {
       setIsDownloading(false);
     }
@@ -610,7 +587,16 @@ export default function TicketSidebar({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2"><FileText size={18} className="text-[rgb(var(--text-secondary))]" /><span className="font-medium text-[rgb(var(--text-primary))]">Requirements</span><span className="bg-blue-500/20 text-blue-400 text-xs font-bold px-2 py-0.5 rounded-full">{requirementsCount} items</span></div>
               <div className="flex gap-2">
-                {ticket.extraction_status === "VALID" ? (<button onClick={handleDownload} disabled={isDownloading} className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded transition-colors ${isDownloading ? 'text-yellow-400 bg-yellow-500/10 cursor-wait' : 'text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'}`}>{isDownloading ? <><Loader2 size={12} className="animate-spin" /> Generating...</> : <><Download size={12} /> Excel</>}</button>) : <span className="text-[10px] font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-wider">Irrelevant</span>}
+                {ticket.extraction_status === "VALID" ? (
+                  <button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed px-2 py-1 rounded transition-colors"
+                  >
+                    {isDownloading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                    {isDownloading ? "Generating..." : "Excel"}
+                  </button>
+                ) : <span className="text-[10px] font-bold text-[rgb(var(--text-tertiary))] uppercase tracking-wider">Irrelevant</span>}
                 <button onClick={onEditRequirements} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20"><Maximize2 size={14} /> View</button>
               </div>
             </div>

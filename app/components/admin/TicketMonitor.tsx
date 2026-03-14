@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-    Loader2, Eye, ShoppingCart, FileText, MessageSquare,
-    Monitor, Filter
+    Loader2,
+    Monitor, Filter, Search,
 } from "lucide-react";
 import TicketSidebar from "../tickets/TicketSidebar";
 import FilterSidebar from "../layout/FilterSidebar";
@@ -14,73 +14,90 @@ import { FilterState, INITIAL_FILTERS } from "../../../types/filters";
 import { useSearch } from "../../../context/SearchContext";
 import { ticketMatchesSearch } from "../../../app/lib/searchUtils";
 
+const STATUS_TABS = ["All", "Inbox", "Sent", "Order Confirmed", "Closed"] as const;
+
 export default function TicketMonitor() {
-    // 1. Replaced separate state and useEffect with useTickets hook via React Query
     const { data: tickets = [], isLoading, refetch, isFetching } = useTickets({
-        refetchInterval: 30000, // Poll every 30s
+        refetchInterval: 30000,
     });
 
     const [selectedTicket, setSelectedTicket] = useState<EmailExtraction | null>(null);
-
-    // Filter State
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [activeFilters, setActiveFilters] = useState<FilterState>(INITIAL_FILTERS);
+    const [activeTab, setActiveTab] = useState<string>("All");
+    const [localSearch, setLocalSearch] = useState("");
     const { searchQuery } = useSearch();
 
-    //   FIX: Keep selectedTicket in sync with latest data
+    // Keep selectedTicket in sync with latest data
     useEffect(() => {
         if (selectedTicket && tickets.length > 0) {
             const updated = tickets.find(t => t.gmail_id === selectedTicket.gmail_id);
-            if (updated) {
-                // Only update if actually changed to avoid loop (though React compares ref mostly)
-                // Since this object comes from React Query, it's a new ref if data changed.
-                if (updated !== selectedTicket) {
-                    setSelectedTicket(updated);
-                }
+            if (updated && updated !== selectedTicket) {
+                setSelectedTicket(updated);
             }
         }
     }, [tickets, selectedTicket]);
 
-    // Filtering Logic
+    // Combined filtering: global search + tab + filter sidebar + local search
     const filteredTickets = useMemo(() => {
         let result = tickets.filter(e => e.extraction_status === "VALID");
 
-        // Global Search Filtering
+        // Global search
         if (searchQuery) {
             result = result.filter(ticket => ticketMatchesSearch(ticket, searchQuery));
+        }
+
+        // Tab filter
+        if (activeTab !== "All") {
+            result = result.filter(ticket => {
+                const status = (ticket.ticket_status || "OPEN").toUpperCase();
+                if (activeTab === "Inbox") return status === "OPEN" || status === "INBOX";
+                if (activeTab === "Sent") return status === "SENT";
+                if (activeTab === "Order Confirmed") return status === "ORDER_CONFIRMED";
+                if (activeTab === "Closed") return status === "CLOSED" || status === "ORDER_COMPLETED";
+                return true;
+            });
+        }
+
+        // Local search
+        if (localSearch.trim()) {
+            const q = localSearch.toLowerCase();
+            result = result.filter(t =>
+                (t.company_name || "").toLowerCase().includes(q) ||
+                t.sender.toLowerCase().includes(q) ||
+                String(t.id).includes(q) ||
+                (t.assigned_to || "").toLowerCase().includes(q)
+            );
         }
 
         if (!activeFilters) return result;
 
         return result.filter((ticket) => {
-            // Status Filter logic
             if (activeFilters.statuses.length > 0) {
                 const acceptableStatuses: string[] = [];
-                const norm = (s: string) => s?.toUpperCase() || '';
-                if (activeFilters.statuses.includes('Inbox')) acceptableStatuses.push('OPEN', 'INBOX');
-                if (activeFilters.statuses.includes('Sent')) acceptableStatuses.push('SENT');
-                if (activeFilters.statuses.includes('Order Confirmed')) acceptableStatuses.push('ORDER_CONFIRMED');
-                if (activeFilters.statuses.includes('Order Completed')) acceptableStatuses.push('ORDER_COMPLETED');
-                if (activeFilters.statuses.includes('Closed')) acceptableStatuses.push('CLOSED');
-                const currentStatus = ticket.ticket_status ? norm(ticket.ticket_status) : 'OPEN';
+                const norm = (s: string) => s?.toUpperCase() || "";
+                if (activeFilters.statuses.includes("Inbox")) acceptableStatuses.push("OPEN", "INBOX");
+                if (activeFilters.statuses.includes("Sent")) acceptableStatuses.push("SENT");
+                if (activeFilters.statuses.includes("Order Confirmed")) acceptableStatuses.push("ORDER_CONFIRMED");
+                if (activeFilters.statuses.includes("Order Completed")) acceptableStatuses.push("ORDER_COMPLETED");
+                if (activeFilters.statuses.includes("Closed")) acceptableStatuses.push("CLOSED");
+                const currentStatus = ticket.ticket_status ? norm(ticket.ticket_status) : "OPEN";
                 if (!acceptableStatuses.some(status => norm(status) === currentStatus)) return false;
             }
 
-            // Urgency, Date, and Search filters
-            if (activeFilters.urgency !== 'ALL') {
-                if ((ticket.ticket_priority?.toUpperCase() || 'NON_URGENT') !== activeFilters.urgency.toUpperCase()) return false;
+            if (activeFilters.urgency !== "ALL") {
+                if ((ticket.ticket_priority?.toUpperCase() || "NON_URGENT") !== activeFilters.urgency.toUpperCase()) return false;
             }
             if (activeFilters.clientEmail && !ticket.sender?.toLowerCase().includes(activeFilters.clientEmail.toLowerCase())) return false;
             if (activeFilters.assignedEmployeeName && !ticket.assigned_to?.toLowerCase().includes(activeFilters.assignedEmployeeName.toLowerCase())) return false;
             if (activeFilters.ticketNumber && !String(ticket.id).includes(activeFilters.ticketNumber)) return false;
             if (activeFilters.quotationReference) {
-                const hasRef = ticket.quotation_files?.some(q => (q.reference_id || '').toLowerCase().includes(activeFilters.quotationReference.toLowerCase()));
+                const hasRef = ticket.quotation_files?.some(q => (q.reference_id || "").toLowerCase().includes(activeFilters.quotationReference.toLowerCase()));
                 if (!hasRef) return false;
             }
 
-            // Date Range Filter
             if (activeFilters.startDate || activeFilters.endDate) {
-                const dateToCheckStr = activeFilters.dateType === 'updated' ? ticket.updated_at : (ticket.received_at || ticket.created_at);
+                const dateToCheckStr = activeFilters.dateType === "updated" ? ticket.updated_at : (ticket.received_at || ticket.created_at);
                 if (dateToCheckStr) {
                     const ticketDate = new Date(dateToCheckStr);
                     if (activeFilters.startDate) {
@@ -98,213 +115,240 @@ export default function TicketMonitor() {
 
             return true;
         });
-    }, [tickets, activeFilters, searchQuery]);
-
+    }, [tickets, activeFilters, searchQuery, activeTab, localSearch]);
 
     const getLatestQuoteInfo = (t: EmailExtraction) => {
-        // Case 1: Order Confirmed -> Show CPO Amount (Blue)
-        if (t.ticket_status === 'ORDER_CONFIRMED' || t.ticket_status === 'ORDER_COMPLETED') {
+        if (t.ticket_status === "ORDER_CONFIRMED" || t.ticket_status === "ORDER_COMPLETED") {
             if (!t.cpo_files || t.cpo_files.length === 0) return null;
             const latestCPO = [...t.cpo_files].reverse()[0];
             return {
                 ref: latestCPO.po_number || latestCPO.reference_id || `PO-${latestCPO.id}`,
                 amount: latestCPO.amount || "N/A",
-                type: 'PO'
+                type: "PO",
             };
         }
-
-
-        // Case 2: Sent / Inbox / Others -> Show Quotation Amount (Green)
         if (!t.quotation_files || t.quotation_files.length === 0) return null;
-
-        const sorted = [...t.quotation_files].reverse(); // Latest is usually last
-        const latest = sorted[0];
-
+        const latest = [...t.quotation_files].reverse()[0];
         return {
             ref: latest.reference_id || `DBQ-${latest.id}`,
             amount: latest.amount || "N/A",
-            type: 'QUOTE'
+            type: "QUOTE",
         };
     };
 
-    // Helper to format date in UAE time
-    const formatDate = (dateString: string) => {
-        return {
-            time: formatUaeTime(dateString),
-            date: formatUae(dateString, {
-                day: "2-digit",
-                month: "2-digit",
-                year: "2-digit",
-            }),
-        };
-    };
+    const formatDate = (dateString: string) => ({
+        time: formatUaeTime(dateString),
+        date: formatUae(dateString, { day: "2-digit", month: "2-digit", year: "2-digit" }),
+    });
 
-    // Helper for Status Badge
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'SENT': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-            case 'ORDER_CONFIRMED': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
-            case 'ORDER_COMPLETED': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-            case 'COMPLETION_REQUESTED': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-            case 'CLOSED': return 'bg-red-500/10 text-red-500 border-red-500/20';
-            default: return 'bg-blue-400/10 text-blue-400 border-blue-400/20'; // Inbox / Default
+            case "SENT": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+            case "ORDER_CONFIRMED": return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+            case "ORDER_COMPLETED": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+            case "COMPLETION_REQUESTED": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+            case "CLOSED": return "bg-red-500/20 text-red-400 border-red-500/30";
+            default: return "bg-blue-400/20 text-blue-400 border-blue-400/30";
         }
     };
 
+    const hasActiveFilters = Object.keys(activeFilters).some(
+        k => k !== "dateType" && JSON.stringify(activeFilters[k as keyof FilterState]) !== JSON.stringify(INITIAL_FILTERS[k as keyof FilterState])
+    );
+
     return (
-        <div className="bg-[rgb(var(--bg-secondary))] rounded-xl border border-[rgb(var(--border-primary))] overflow-hidden flex flex-col h-[calc(100vh-140px)] shadow-sm">
-            <div className="p-4 border-b border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-secondary))] flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <Monitor size={18} className="text-blue-500" />
-                    <h2 className="text-lg font-semibold text-[rgb(var(--text-primary))]">Live Monitor</h2>
-                    <span className="text-xs text-[rgb(var(--text-secondary))] px-2 py-0.5 bg-[rgb(var(--bg-tertiary))] rounded-full border border-[rgb(var(--border-primary))]">
-                        {filteredTickets.length} / {tickets.length} Tickets
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        className={`p-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm px-3
-                            ${Object.keys(activeFilters).some(k => k !== 'dateType' && JSON.stringify(activeFilters[k as keyof FilterState]) !== JSON.stringify(INITIAL_FILTERS[k as keyof FilterState]))
-                                ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                : 'hover:bg-[rgb(var(--hover-bg))] text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]'}`}
-                    >
-                        <Filter size={16} /> Filters
-                    </button>
-                    <button onClick={() => refetch()} className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors">
-                        <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
-                    </button>
-                </div>
-            </div>
+        <div className="min-h-screen bg-[hsl(var(--bg))] text-[rgb(var(--text-primary))]">
+            <div className="max-w-[1440px] mx-auto p-5 space-y-5">
 
-            <div className="overflow-auto flex-1 bg-[rgb(var(--bg-primary))]">
-                <table className="w-full text-left text-sm text-[rgb(var(--muted))]">
-                    <thead className="bg-[rgb(var(--bg-secondary))] text-xs font-medium text-[rgb(var(--text-secondary))] uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-                        <tr>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-24">Time / Date</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-40">Assigned To</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-48">Company</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] flex-1">Email / Subject</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-20 text-center">View</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-32">Status</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-64">Commercial Refs</th>
-                            <th className="px-4 py-3 border-b border-[rgb(var(--border-secondary))] w-16 text-center">Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[rgb(var(--border-secondary))]">
-                        {isLoading && tickets.length === 0 ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-[rgb(var(--text-secondary))]">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Loader2 size={16} className="animate-spin" /> Loading data...
-                                    </div>
-                                </td>
-                            </tr>
-                        ) : filteredTickets.length === 0 ? (
-                            <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-[rgb(var(--text-secondary))]">
-                                    No tickets found matching filters.
-                                </td>
-                            </tr>
-                        ) : filteredTickets.map((t) => {
-                            const { time, date } = formatDate(t.received_at || t.created_at);
-                            const latestQuote = getLatestQuoteInfo(t);
-                            return (
-                                <tr
-                                    key={t.gmail_id}
-                                    onClick={() => setSelectedTicket(t)}
-                                    className="bg-[hsl(var(--bg))] hover:bg-[hsl(var(--bg))]/80 cursor-pointer transition-colors group"
-                                >
-                                    {/* Time / Date */}
-                                    <td className="px-4 py-3">
-                                        <div className="font-bold text-[rgb(var(--text-primary))] font-mono text-xs">{time}</div>
-                                        <div className="text-[10px] text-[rgb(var(--text-secondary))] font-mono">{date}</div>
-                                    </td>
+                {/* ── Header ─────────────────────────────────────────────── */}
+                <header className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-900/30">
+                            <Monitor size={18} />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold tracking-tight leading-tight">Ticket Monitor</h1>
+                            <p className="text-[11px] text-[rgb(var(--text-secondary))] tracking-wide">SnapQuote · Live View</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            className={`p-1.5 rounded-lg transition-colors flex items-center gap-2 text-sm px-3 ${hasActiveFilters
+                                ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                : "hover:bg-[rgb(var(--hover-bg))] text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]"}`}
+                        >
+                            <Filter size={16} /> Filters
+                        </button>
+                        <button
+                            onClick={() => refetch()}
+                            className="p-1.5 hover:bg-[rgb(var(--hover-bg))] rounded-lg text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))] transition-colors"
+                        >
+                            <Loader2 size={16} className={isFetching ? "animate-spin" : ""} />
+                        </button>
+                    </div>
+                </header>
 
-                                    {/* Assigned To */}
-                                    <td className="px-4 py-3">
-                                        {t.assigned_to ? (
-                                            <div className="border border-[rgb(var(--border-primary))] bg-[rgb(var(--bg-tertiary))] px-2 py-1 rounded text-xs text-[rgb(var(--text-primary))] flex items-center justify-between">
-                                                <span className="truncate max-w-[100px] text-[rgb(var(--text-primary))]">{t.assigned_to}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="border border-yellow-500/20 bg-yellow-500/5 px-2 py-1 rounded text-xs text-yellow-500/80">
-                                                Unassigned
-                                            </div>
-                                        )}
-                                    </td>
+                {/* ── Ticket Drilldown Card ──────────────────────────────── */}
+                <div className="bg-[rgb(var(--bg-secondary))] border border-[rgb(var(--border-primary))] rounded-xl overflow-hidden">
 
-                                    {/* Company */}
-                                    <td className="px-4 py-3">
-                                        <div className="text-[rgb(var(--text-primary))] font-medium truncate max-w-[180px]" title={t.company_name || t.sender}>
-                                            {t.company_name || (t.sender.includes('<') ? t.sender.split('<')[0].replace(/"/g, '').trim() : t.sender.split('@')[0])}
-                                        </div>
-                                    </td>
+                    {/* Card Header: Title + Tabs + Search */}
+                    <div className="px-5 pt-5 pb-3 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold tracking-tight">Ticket Drilldown</h3>
+                            <span className="text-xs text-[rgb(var(--text-secondary))] px-2 py-0.5 bg-[rgb(var(--bg-tertiary))] rounded-full border border-[rgb(var(--border-primary))]">
+                                {filteredTickets.length} / {tickets.filter(e => e.extraction_status === "VALID").length}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {/* Status Tabs */}
+                            <div className="flex items-center bg-[rgb(var(--bg-tertiary))] rounded-lg p-0.5">
+                                {STATUS_TABS.map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all duration-200 ${activeTab === tab
+                                            ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/30"
+                                            : "text-[rgb(var(--text-secondary))] hover:text-[rgb(var(--text-primary))]"}`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Search */}
+                            <div className="relative">
+                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[rgb(var(--text-tertiary))]" />
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={localSearch}
+                                    onChange={(e) => setLocalSearch(e.target.value)}
+                                    className="w-36 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[rgb(var(--text-primary))] placeholder-[rgb(var(--text-tertiary))] focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-                                    {/* Email / Subject */}
-                                    <td className="px-4 py-3">
-                                        <div className="flex flex-col">
-                                            <span className="text-xs text-[rgb(var(--text-secondary))] truncate max-w-[250px]" title={t.sender}>
-                                                {t.sender.includes('<') ? t.sender.match(/<([^>]+)>/)?.[1] : t.sender}
-                                            </span>
-                                            <span className="text-[rgb(var(--text-primary))] text-xs truncate max-w-[300px] group-hover:text-blue-400 transition-colors" title={t.subject}>
-                                                {t.subject}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    {/* View */}
-                                    <td className="px-4 py-3 text-center text-[rgb(var(--text-secondary))]">
-                                        <div className="flex items-center justify-center gap-1 group-hover:text-[rgb(var(--text-primary))] transition-colors">
-                                            <Eye size={14} />
-                                            <span className="text-[10px]">({t.extraction_result.Requirements?.length || 0})</span>
-                                        </div>
-                                    </td>
-
-                                    {/* Status */}
-                                    <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(t.ticket_status)}`}>
-                                            {t.ticket_status || 'INBOX'}
-                                        </span>
-                                    </td>
-
-                                    {/* Commercial Refs */}
-                                    <td className="px-6 py-3 text-right">
-
-                                        {latestQuote ? (
-                                            <div className="flex flex-col items-end gap-0.5">
-                                                <span className={`font-bold font-mono text-xs px-1.5 rounded border ${latestQuote.type === 'PO'
-                                                    ? 'text-blue-400 bg-blue-500/10 border-blue-500/20'
-                                                    : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                                                    }`}>
-                                                    AED {latestQuote.amount}
-                                                </span>
-                                                <span className="text-[9px] text-[rgb(var(--text-secondary))] font-mono flex items-center gap-1">
-                                                    {latestQuote.type === 'PO' ? <ShoppingCart size={8} /> : <FileText size={8} />}
-                                                    {latestQuote.ref}
-                                                </span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-[rgb(var(--text-secondary))] text-xs font-mono">—</span>
-                                        )}
-                                    </td>
-
-                                    {/* Notes */}
-                                    <td className="px-4 py-3 text-center">
-                                        {t.internal_notes && t.internal_notes.length > 0 ? (
-                                            <div className="flex items-center justify-center gap-0.5 text-[rgb(var(--text-secondary))]">
-                                                <MessageSquare size={12} />
-                                                <span className="text-[10px]">{t.internal_notes.length}</span>
-                                            </div>
-                                        ) : (
-                                            <span className="text-[rgb(var(--text-secondary))] text-[10px]">—</span>
-                                        )}
-                                    </td>
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
+                                    <th className="px-5 py-3 font-semibold">Ticket ID</th>
+                                    <th className="px-4 py-3 font-semibold">Company</th>
+                                    <th className="px-4 py-3 font-semibold">Status</th>
+                                    <th className="px-4 py-3 font-semibold">Quote Ref</th>
+                                    <th className="px-4 py-3 font-semibold">CPO Ref</th>
+                                    <th className="px-4 py-3 font-semibold text-right">Quote Amt</th>
+                                    <th className="px-4 py-3 font-semibold text-right">CPO Amt</th>
+                                    <th className="px-4 py-3 font-semibold">Assigned</th>
+                                    <th className="px-4 py-3 font-semibold">Sent</th>
+                                    <th className="px-4 py-3 font-semibold">Confirmed</th>
+                                    <th className="px-4 py-3 font-semibold">Closed</th>
                                 </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody className="divide-y divide-[rgb(var(--border-primary))]">
+                                {isLoading && tickets.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={11} className="px-5 py-8 text-center text-xs text-[rgb(var(--text-secondary))]">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Loader2 size={16} className="animate-spin" /> Loading data...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : filteredTickets.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={11} className="px-5 py-8 text-center text-xs text-[rgb(var(--text-tertiary))]">
+                                            No tickets match the current filter.
+                                        </td>
+                                    </tr>
+                                ) : filteredTickets.map((t) => {
+                                    const { time, date } = formatDate(t.received_at || t.created_at);
+                                    const latestQuote = getLatestQuoteInfo(t);
+                                    const status = t.ticket_status || "INBOX";
+                                    const sentDate = t.quotation_files?.length
+                                        ? formatUae([...t.quotation_files].reverse()[0]?.uploaded_at || "", { day: "2-digit", month: "2-digit", year: "2-digit" })
+                                        : "—";
+                                    const confirmedDate = t.cpo_files?.length
+                                        ? formatUae([...t.cpo_files].reverse()[0]?.uploaded_at || "", { day: "2-digit", month: "2-digit", year: "2-digit" })
+                                        : "—";
+                                    const quoteRef = t.quotation_files?.length
+                                        ? ([...t.quotation_files].reverse()[0]?.reference_id || `DBQ-${[...t.quotation_files].reverse()[0]?.id}`)
+                                        : "—";
+                                    const cpoRef = t.cpo_files?.length
+                                        ? ([...t.cpo_files].reverse()[0]?.po_number || [...t.cpo_files].reverse()[0]?.reference_id || `PO-${[...t.cpo_files].reverse()[0]?.id}`)
+                                        : "—";
+
+                                    return (
+                                        <tr
+                                            key={t.gmail_id}
+                                            onClick={() => setSelectedTicket(t)}
+                                            className="hover:bg-[rgb(var(--hover-bg))] cursor-pointer transition-colors group"
+                                        >
+                                            {/* Ticket ID */}
+                                            <td className="px-5 py-3.5">
+                                                <div className="text-xs font-semibold text-emerald-400 leading-tight">{t.id}</div>
+                                                <div className="text-[10px] text-[rgb(var(--text-tertiary))] font-mono mt-0.5">{date}</div>
+                                            </td>
+
+                                            {/* Company + Email */}
+                                            <td className="px-4 py-3.5 text-xs max-w-[200px]">
+                                                <div className="font-medium truncate" title={t.company_name || t.sender}>
+                                                    {t.company_name || (t.sender.includes("<") ? t.sender.split("<")[0].replace(/"/g, "").trim() : t.sender.split("@")[0])}
+                                                </div>
+                                                <div className="text-[10px] text-[rgb(var(--text-tertiary))] truncate mt-0.5" title={t.sender}>
+                                                    {t.sender.includes("<") ? t.sender.match(/<([^>]+)>/)?.[1] : t.sender}
+                                                </div>
+                                            </td>
+
+                                            {/* Status */}
+                                            <td className="px-4 py-3.5">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${getStatusStyle(status)}`}>
+                                                    {status.replace("_", " ")}
+                                                </span>
+                                            </td>
+
+                                            {/* Quote Ref */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))] font-mono">{quoteRef}</td>
+
+                                            {/* CPO Ref */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-secondary))] font-mono">{cpoRef}</td>
+
+                                            {/* Quote Amt */}
+                                            <td className="px-4 py-3.5 text-xs text-right font-medium text-amber-400">
+                                                {latestQuote && latestQuote.type === "QUOTE" ? `AED ${latestQuote.amount}` : "—"}
+                                            </td>
+
+                                            {/* CPO Amt */}
+                                            <td className="px-4 py-3.5 text-xs text-right font-medium text-emerald-400">
+                                                {latestQuote && latestQuote.type === "PO" ? `AED ${latestQuote.amount}` : "—"}
+                                            </td>
+
+                                            {/* Assigned */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))]">
+                                                {t.assigned_to || "—"}
+                                            </td>
+
+                                            {/* Sent */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))] font-mono">{sentDate}</td>
+
+                                            {/* Confirmed */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))] font-mono">{confirmedDate}</td>
+
+                                            {/* Closed */}
+                                            <td className="px-4 py-3.5 text-xs text-[rgb(var(--text-tertiary))] font-mono">
+                                                {(status === "CLOSED" || status === "ORDER_COMPLETED") ? date : "—"}
+                                            </td>
+
+
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             {/* Filter Sidebar */}
@@ -325,10 +369,10 @@ export default function TicketMonitor() {
                     isOpen={!!selectedTicket}
                     onClose={() => {
                         setSelectedTicket(null);
-                        refetch(); // Refresh data on close
+                        refetch();
                     }}
                     onUpdate={() => {
-                        refetch(); // Refresh on update
+                        refetch();
                     }}
                 />
             )}
