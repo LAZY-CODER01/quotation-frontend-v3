@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from "react";
-import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote, Trash2, Download } from "lucide-react";
+import { Upload, FileCheck, Loader2, ExternalLink, X, Check, ShoppingCart, Banknote, Trash2, Download, Pencil } from "lucide-react";
 import { EmailExtraction, QuotationFile } from "../../../types/email";
 import api from "../../../lib/api";
 import { useUpload } from "../../../context/UploadContext"; // ✅ Custom Hook
@@ -8,26 +8,57 @@ interface CPOSectionProps {
   ticket: EmailExtraction;
   onFileAdded?: (newFile: QuotationFile) => void;
   onFileDeleted?: (fileId: string) => void;
+  onFileUpdated?: (fileId: string, newAmount: string) => void;
   isAdmin?: boolean;
 }
 
-// Sub-component for individual CPO file row
+// Sub-component for individual CPO file row (with editable amount)
 const CPORow = ({
   file,
+  gmailId,
   isAdmin,
-  onDelete
+  onDelete,
+  onFileUpdated
 }: {
   file: QuotationFile;
+  gmailId: string;
   isAdmin?: boolean;
   onDelete: (id: string) => void;
+  onFileUpdated?: (fileId: string, newAmount: string) => void;
 }) => {
+  const [amount, setAmount] = useState(file.amount || "");
+  const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleSave = async () => {
+    if (amount === file.amount) return;
+    setIsSaving(true);
+    // Optimistic update callback
+    if (onFileUpdated) onFileUpdated(file.id, amount);
+
+    try {
+      await api.post("/ticket/update-file-amount", {
+        gmail_id: gmailId,
+        file_id: file.id,
+        amount: amount,
+        file_type: "cpo"
+      });
+    } catch (error) {
+      console.error("Failed to update CPO amount", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this PO file?")) return;
     setIsDeleting(true);
     await onDelete(file.id);
     setIsDeleting(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
   };
 
   return (
@@ -40,7 +71,6 @@ const CPORow = ({
         </div>
         <div className="min-w-0">
           <p className="text-sm text-[rgb(var(--text-primary))] truncate pr-4" title={file.name}>
-            {/* ✅ FIX: Show file name as primary */}
             {file.name}
           </p>
           <p className="text-[10px] text-[rgb(var(--text-tertiary))] truncate" title={file.reference_id}>
@@ -66,12 +96,20 @@ const CPORow = ({
           </div>
         )}
 
-        {/* Amount Badge (New) */}
-        {file.amount && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded text-[10px] font-mono text-blue-400 font-bold">
-            <span>AED {file.amount}</span>
-          </div>
-        )}
+        {/* Editable Amount Input */}
+        <div className="flex items-center gap-2 bg-[rgb(var(--bg-tertiary))] border border-[rgb(var(--border-primary))] rounded px-2 py-1.5 focus-within:border-blue-500/50 transition-colors w-24 sm:w-28">
+          <span className="text-[10px] font-bold text-green-500">AED</span>
+          <input
+            type="text"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            placeholder="0.00"
+            className="w-full bg-transparent text-xs text-[rgb(var(--text-primary))] outline-none text-right font-mono"
+          />
+          {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
+        </div>
 
         {/* Download Button */}
         <a
@@ -101,7 +139,7 @@ const CPORow = ({
   );
 };
 
-export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin }: CPOSectionProps) {
+export default function CPOSection({ ticket, onFileAdded, onFileDeleted, onFileUpdated, isAdmin }: CPOSectionProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingFilesRef = useRef<Set<string>>(new Set());
@@ -234,6 +272,11 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
     if (onFileDeleted) onFileDeleted(tempId);
   };
 
+  const handleFileUpdatedLocally = (fileId: string, newAmount: string) => {
+    setLocalFiles(prev => prev.map(f => f.id === fileId ? { ...f, amount: newAmount } : f));
+    if (onFileUpdated) onFileUpdated(fileId, newAmount);
+  };
+
   const handleDeleteFile = async (fileId: string) => {
     // Optimistic Delete
     const oldFiles = localFiles;
@@ -347,8 +390,10 @@ export default function CPOSection({ ticket, onFileAdded, onFileDeleted, isAdmin
               <CPORow
                 key={key}
                 file={file}
+                gmailId={ticket.gmail_id}
                 isAdmin={isAdmin}
                 onDelete={handleDeleteFile}
+                onFileUpdated={handleFileUpdatedLocally}
               />
             );
           })

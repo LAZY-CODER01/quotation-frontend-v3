@@ -99,11 +99,11 @@ const FileRow = ({
           <input
             type="text"
             value={amount}
-            readOnly
+            onChange={(e) => setAmount(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             placeholder="0.00"
-            className="w-full bg-transparent text-xs text-[rgb(var(--text-primary))]  text-right font-mono"
+            className="w-full bg-transparent text-xs text-[rgb(var(--text-primary))] outline-none text-right font-mono"
           />
           {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
         </div>
