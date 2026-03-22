@@ -629,11 +629,11 @@ export default function EmployeeAnalytics() {
                     </div>
 
                     {/* Table */}
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
                         <table className="w-full text-left border-collapse">
-                            <thead>
+                            <thead className="sticky top-0 z-10 bg-[rgb(var(--bg-secondary))]">
                                 {selectedEmployee?.id === 'all' ? (
-                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
+                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))] shadow-sm">
                                         <th className="px-5 py-3 font-semibold">Employee</th>
                                         <th className="px-4 py-3 font-semibold text-right">Came In</th>
                                         <th className="px-4 py-3 font-semibold text-right">Sent</th>
@@ -647,7 +647,7 @@ export default function EmployeeAnalytics() {
                                         <th className="px-4 py-3 font-semibold">Action</th>
                                     </tr>
                                 ) : (
-                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))]/50">
+                                    <tr className="border-t border-b border-[rgb(var(--border-primary))] text-[10px] text-[rgb(var(--text-tertiary))] uppercase tracking-widest bg-[rgb(var(--bg-tertiary))] shadow-sm">
                                         <th className="px-5 py-3 font-semibold">Ticket ID</th>
                                         <th className="px-4 py-3 font-semibold">Company</th>
                                         <th className="px-4 py-3 font-semibold">Status</th>
